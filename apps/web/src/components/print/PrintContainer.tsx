@@ -7,7 +7,7 @@ import {
   computeSheetSlotsGeometry,
   CutMarkStyle,
 } from '@pixture/layout-engine';
-import { buildCssFilterString } from '@pixture/print-core';
+import { buildCssFilterString, computeSlotPhotoLayout } from '@pixture/print-core';
 
 export function PrintContainer() {
   const { config, pages, photos } = useProject();
@@ -114,20 +114,24 @@ export function PrintContainer() {
 
               if (!photo || !adj) return null;
 
-              const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
-              const rotScale = isRotated90
-                ? adj.fitMode === 'contain'
-                  ? Math.min(
-                      slotGeom.widthMm / slotGeom.heightMm,
-                      slotGeom.heightMm / slotGeom.widthMm
-                    )
-                  : Math.max(
-                      slotGeom.widthMm / slotGeom.heightMm,
-                      slotGeom.heightMm / slotGeom.widthMm
-                    )
-                : 1;
-              const effectiveZoom = adj.zoom * rotScale;
               const bleed = config.bleedMm || 0;
+              const slotW = slotGeom.widthMm + bleed * 2;
+              const slotH = slotGeom.heightMm + bleed * 2;
+
+              const padT = adj.isPolaroid ? 5 : adj.hasWhiteBorder ? adj.whiteBorderWidthMm : 0;
+              const padLR = adj.isPolaroid ? 5 : adj.hasWhiteBorder ? adj.whiteBorderWidthMm : 0;
+              const padB = adj.isPolaroid ? 20 : adj.hasWhiteBorder ? adj.whiteBorderWidthMm : 0;
+
+              const innerW = Math.max(1, slotW - padLR * 2);
+              const innerH = Math.max(1, slotH - padT - padB);
+
+              const layout = computeSlotPhotoLayout({
+                innerW,
+                innerH,
+                photoWidth: photo.width || 1,
+                photoHeight: photo.height || 1,
+                adj,
+              });
 
               return (
                 <div
@@ -136,39 +140,48 @@ export function PrintContainer() {
                   style={{
                     left: `${slotGeom.xMm - bleed}mm`,
                     top: `${slotGeom.yMm - bleed}mm`,
-                    width: `${slotGeom.widthMm + bleed * 2}mm`,
-                    height: `${slotGeom.heightMm + bleed * 2}mm`,
+                    width: `${slotW}mm`,
+                    height: `${slotH}mm`,
                   }}
                 >
                   <div
                     className="relative overflow-hidden w-full h-full flex items-center justify-center bg-white"
                     style={{
-                      padding: adj.isPolaroid
-                        ? '5mm 5mm 20mm 5mm'
-                        : adj.hasWhiteBorder
-                          ? `${adj.whiteBorderWidthMm}mm`
-                          : 0,
+                      padding: `${padT}mm ${padLR}mm ${padB}mm ${padLR}mm`,
                     }}
                   >
-                    <img
-                      src={photo.dataUrl}
-                      alt={photo.name}
-                      className="max-w-none select-none"
-                      style={{
-                        width:
-                          adj.fitMode === 'contain' && !isRotated90
-                            ? '100%'
-                            : `${100 * effectiveZoom}%`,
-                        height:
-                          adj.fitMode === 'contain' && !isRotated90
-                            ? '100%'
-                            : `${100 * effectiveZoom}%`,
-                        objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
-                        objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
-                        transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
-                        filter: buildCssFilterString(adj),
-                      }}
-                    />
+                    <div className="relative overflow-hidden w-full h-full flex items-center justify-center">
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: '50%',
+                          top: '50%',
+                          width: `${layout.targetW}mm`,
+                          height: `${layout.targetH}mm`,
+                          transform: `translate(-50%, -50%) rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <img
+                          src={photo.dataUrl}
+                          alt={photo.name}
+                          className="max-w-none select-none"
+                          style={{
+                            position: 'absolute',
+                            left: '50%',
+                            top: '50%',
+                            width: `${layout.drawW}mm`,
+                            height: `${layout.drawH}mm`,
+                            maxWidth: 'none',
+                            maxHeight: 'none',
+                            transform: `translate(calc(-50% + ${layout.panOffsetX}mm), calc(-50% + ${layout.panOffsetY}mm))`,
+                            filter: buildCssFilterString(adj),
+                          }}
+                        />
+                      </div>
+                    </div>
 
                     {adj.isPolaroid && adj.polaroidCaption && (
                       <div className="absolute bottom-1 w-full text-center font-caveat text-black truncate px-1 text-[12pt]">

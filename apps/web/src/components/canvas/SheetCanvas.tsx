@@ -20,7 +20,7 @@ import {
   computeSheetSlotsGeometry,
   CutMarkStyle,
 } from '@pixture/layout-engine';
-import { buildCssFilterString } from '@pixture/print-core';
+import { buildCssFilterString, computeSlotPhotoLayout } from '@pixture/print-core';
 import { Ruler } from './Ruler.js';
 
 export function SheetCanvas() {
@@ -512,46 +512,76 @@ export function SheetCanvas() {
                   {photo &&
                     adj &&
                     (() => {
-                      const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
-                      const rotScale = isRotated90
-                        ? adj.fitMode === 'contain'
-                          ? Math.min(slotW / slotH, slotH / slotW)
-                          : Math.max(slotW / slotH, slotH / slotW)
-                        : 1;
-                      const effectiveZoom = adj.zoom * rotScale;
+                      const padT = adj.isPolaroid
+                        ? 5 * pxPerMm
+                        : adj.hasWhiteBorder
+                          ? adj.whiteBorderWidthMm * pxPerMm
+                          : 0;
+                      const padLR = adj.isPolaroid
+                        ? 5 * pxPerMm
+                        : adj.hasWhiteBorder
+                          ? adj.whiteBorderWidthMm * pxPerMm
+                          : 0;
+                      const padB = adj.isPolaroid
+                        ? 20 * pxPerMm
+                        : adj.hasWhiteBorder
+                          ? adj.whiteBorderWidthMm * pxPerMm
+                          : 0;
+
+                      const innerW = Math.max(1, slotW - padLR * 2);
+                      const innerH = Math.max(1, slotH - padT - padB);
+
+                      const layout = computeSlotPhotoLayout({
+                        innerW,
+                        innerH,
+                        photoWidth: photo.width || 1,
+                        photoHeight: photo.height || 1,
+                        adj,
+                      });
 
                       return (
                         <div className="w-full h-full relative overflow-hidden flex items-center justify-center">
                           <div
                             className="relative overflow-hidden w-full h-full flex items-center justify-center"
                             style={{
-                              padding: adj.isPolaroid
-                                ? `${5 * pxPerMm}px ${5 * pxPerMm}px ${20 * pxPerMm}px ${5 * pxPerMm}px`
-                                : adj.hasWhiteBorder
-                                  ? `${adj.whiteBorderWidthMm * pxPerMm}px`
-                                  : 0,
+                              padding: `${padT}px ${padLR}px ${padB}px ${padLR}px`,
                               backgroundColor: '#ffffff',
                             }}
                           >
-                            <img
-                              src={photo.dataUrl}
-                              alt={photo.name}
-                              className="max-w-none pointer-events-none select-none transition-transform"
-                              style={{
-                                width:
-                                  adj.fitMode === 'contain' && !isRotated90
-                                    ? '100%'
-                                    : `${100 * effectiveZoom}%`,
-                                height:
-                                  adj.fitMode === 'contain' && !isRotated90
-                                    ? '100%'
-                                    : `${100 * effectiveZoom}%`,
-                                objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
-                                objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
-                                transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
-                                filter: buildCssFilterString(adj),
-                              }}
-                            />
+                            <div className="relative overflow-hidden w-full h-full flex items-center justify-center">
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  left: '50%',
+                                  top: '50%',
+                                  width: `${layout.targetW}px`,
+                                  height: `${layout.targetH}px`,
+                                  transform: `translate(-50%, -50%) rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  pointerEvents: 'none',
+                                }}
+                              >
+                                <img
+                                  src={photo.dataUrl}
+                                  alt={photo.name}
+                                  draggable={false}
+                                  className="max-w-none pointer-events-none select-none transition-transform"
+                                  style={{
+                                    position: 'absolute',
+                                    left: '50%',
+                                    top: '50%',
+                                    width: `${layout.drawW}px`,
+                                    height: `${layout.drawH}px`,
+                                    maxWidth: 'none',
+                                    maxHeight: 'none',
+                                    transform: `translate(calc(-50% + ${layout.panOffsetX}px), calc(-50% + ${layout.panOffsetY}px))`,
+                                    filter: buildCssFilterString(adj),
+                                  }}
+                                />
+                              </div>
+                            </div>
 
                             {/* Trim Line Guide (Cut Boundary when Bleed is active) */}
                             {bleed > 0 && (

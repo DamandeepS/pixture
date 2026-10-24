@@ -38,6 +38,77 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+export interface SlotPhotoLayoutResult {
+  isRotated90: boolean;
+  targetW: number;
+  targetH: number;
+  drawW: number;
+  drawH: number;
+  excessX: number;
+  excessY: number;
+  panOffsetX: number;
+  panOffsetY: number;
+}
+
+export function computeSlotPhotoLayout(params: {
+  innerW: number;
+  innerH: number;
+  photoWidth: number;
+  photoHeight: number;
+  adj: PhotoSlotAdjustment;
+}): SlotPhotoLayoutResult {
+  const { innerW, innerH, photoWidth, photoHeight, adj } = params;
+  const imgAspect = (photoWidth || 1) / (photoHeight || 1);
+  const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
+  const targetW = isRotated90 ? innerH : innerW;
+  const targetH = isRotated90 ? innerW : innerH;
+  const slotAspect = targetW / targetH;
+
+  let drawW: number;
+  let drawH: number;
+
+  if (adj.fitMode === 'contain') {
+    if (imgAspect > slotAspect) {
+      drawW = targetW;
+      drawH = targetW / imgAspect;
+    } else {
+      drawH = targetH;
+      drawW = targetH * imgAspect;
+    }
+  } else {
+    // Cover mode
+    if (imgAspect > slotAspect) {
+      drawH = targetH;
+      drawW = targetH * imgAspect;
+    } else {
+      drawW = targetW;
+      drawH = targetW / imgAspect;
+    }
+  }
+
+  // Apply zoom factor
+  drawW *= adj.zoom;
+  drawH *= adj.zoom;
+
+  // Pan offsets: (adj.cropX - 0.5) shifts within the excess dimension
+  const excessX = Math.max(0, drawW - targetW);
+  const excessY = Math.max(0, drawH - targetH);
+  const panOffsetX = (adj.cropX - 0.5) * -excessX;
+  const panOffsetY = (adj.cropY - 0.5) * -excessY;
+
+  return {
+    isRotated90,
+    targetW,
+    targetH,
+    drawW,
+    drawH,
+    excessX,
+    excessY,
+    panOffsetX,
+    panOffsetY,
+  };
+}
+
 /**
  * Renders a photo with cropping, zoom, rotation, and color filters into a 2D canvas context
  */
@@ -119,46 +190,21 @@ export function drawPhotoToContext(
     ctx.scale(scaleX, scaleY);
   }
 
-  // When rotated 90 or 270 degrees, the destination dimensions in the image's local space swap
-  const imgAspect = img.naturalWidth / img.naturalHeight;
-  const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
-  const targetW = isRotated90 ? innerH : innerW;
-  const targetH = isRotated90 ? innerW : innerH;
-  const slotAspect = targetW / targetH;
+  const layout = computeSlotPhotoLayout({
+    innerW,
+    innerH,
+    photoWidth: img.naturalWidth,
+    photoHeight: img.naturalHeight,
+    adj,
+  });
 
-  let drawW: number;
-  let drawH: number;
-
-  if (adj.fitMode === 'contain') {
-    if (imgAspect > slotAspect) {
-      drawW = targetW;
-      drawH = targetW / imgAspect;
-    } else {
-      drawH = targetH;
-      drawW = targetH * imgAspect;
-    }
-  } else {
-    // Cover mode
-    if (imgAspect > slotAspect) {
-      drawH = targetH;
-      drawW = targetH * imgAspect;
-    } else {
-      drawW = targetW;
-      drawH = targetW / imgAspect;
-    }
-  }
-
-  // Apply zoom factor
-  drawW *= adj.zoom;
-  drawH *= adj.zoom;
-
-  // Pan offsets: (adj.cropX - 0.5) shifts within the excess dimension
-  const excessX = Math.max(0, drawW - targetW);
-  const excessY = Math.max(0, drawH - targetH);
-  const panOffsetX = (adj.cropX - 0.5) * -excessX * 2;
-  const panOffsetY = (adj.cropY - 0.5) * -excessY * 2;
-
-  ctx.drawImage(img, -drawW / 2 + panOffsetX, -drawH / 2 + panOffsetY, drawW, drawH);
+  ctx.drawImage(
+    img,
+    -layout.drawW / 2 + layout.panOffsetX,
+    -layout.drawH / 2 + layout.panOffsetY,
+    layout.drawW,
+    layout.drawH
+  );
 
   ctx.restore(); // Restore clip from border / polaroid
 

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -16,8 +16,13 @@ import {
   PhotoSlotAdjustment,
   DEFAULT_ADJUSTMENTS,
   buildCssFilterString,
+  computeSlotPhotoLayout,
 } from '@pixture/print-core';
-import { PHOTO_PRESETS } from '@pixture/layout-engine';
+import {
+  PHOTO_PRESETS,
+  computeSheetSlotsGeometry,
+  getPaperDimensions,
+} from '@pixture/layout-engine';
 
 export function CropModal() {
   const {
@@ -86,16 +91,65 @@ export function CropModal() {
     handleClose();
   };
 
+  // Find exact slot geometry to match aspect ratio (uniform or mixed layout)
+  const selectedSlotGeom = useMemo(() => {
+    if (selectedSlotIndex === null) return null;
+    const paperDim = getPaperDimensions(
+      config.paperId,
+      config.orientation,
+      config.customWidthMm,
+      config.customHeightMm
+    );
+    const result = computeSheetSlotsGeometry({
+      sheetWidthMm: paperDim.widthMm,
+      sheetHeightMm: paperDim.heightMm,
+      marginsMm: config.marginsMm,
+      gapXMm: config.gapXMm,
+      gapYMm: config.gapYMm,
+      layoutMode: config.layoutMode,
+      autoOrientation: config.autoOrientation,
+      photoPresetId: config.photoPresetId,
+      customPhotoWidthMm: config.customPhotoWidthMm,
+      customPhotoHeightMm: config.customPhotoHeightMm,
+      primaryPhotoCount: config.primaryPhotoCount ?? 1,
+      secondaryPhotoPresetId: config.secondaryPhotoPresetId ?? 'passport_us',
+      secondaryPhotoCount: config.secondaryPhotoCount ?? 4,
+      customSecondaryWidthMm: config.customSecondaryWidthMm,
+      customSecondaryHeightMm: config.customSecondaryHeightMm,
+      currentPageIndex,
+    });
+    return result.slots.find((s) => s.index === selectedSlotIndex) || null;
+  }, [config, currentPageIndex, selectedSlotIndex]);
+
   // Compute aspect ratio of the target slot
-  const slotAspect = (() => {
+  const slotAspect = useMemo(() => {
+    if (selectedSlotGeom) {
+      return selectedSlotGeom.widthMm / selectedSlotGeom.heightMm;
+    }
     const preset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
     const w = config.customPhotoWidthMm || preset.widthMm;
     const h = config.customPhotoHeightMm || preset.heightMm;
     return w / h;
-  })();
+  }, [selectedSlotGeom, config]);
 
-  // Pan drag handling
+  // Compute viewport box size (max 340px)
+  const maxBoxDim = 340;
+  const boxW = slotAspect >= 1 ? maxBoxDim : Math.round(maxBoxDim * slotAspect);
+  const boxH = slotAspect >= 1 ? Math.round(maxBoxDim / slotAspect) : maxBoxDim;
+
+  // Compute photo positioning and excess dimensions
+  const layout = computeSlotPhotoLayout({
+    innerW: boxW,
+    innerH: boxH,
+    photoWidth: photo?.width || 1,
+    photoHeight: photo?.height || 1,
+    adj: localAdj,
+  });
+
+  // Pan drag handling - Start on mouse down
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
     setIsDragging(true);
     dragStartRef.current = {
       x: e.clientX,
@@ -105,38 +159,104 @@ export function CropModal() {
     };
   };
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !containerRef.current) return;
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
-
-    const rect = containerRef.current.getBoundingClientRect();
-    const deltaXNormalized = dx / rect.width;
-    const deltaYNormalized = dy / rect.height;
-
-    const newCropX = Math.max(0, Math.min(1, dragStartRef.current.initCropX + deltaXNormalized));
-    const newCropY = Math.max(0, Math.min(1, dragStartRef.current.initCropY + deltaYNormalized));
-
-    setLocalAdj((prev) => ({ ...prev, cropX: newCropX, cropY: newCropY }));
+  // Pan drag handling - Start on touch start
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      initCropX: localAdj.cropX,
+      initCropY: localAdj.cropY,
+    };
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
+  // Drag tracking registered on window while dragging
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handlePointerMove = (clientX: number, clientY: number) => {
+      const dx = clientX - dragStartRef.current.x;
+      const dy = clientY - dragStartRef.current.y;
+
+      const rad = (localAdj.rotation * Math.PI) / 180;
+      const cos = Math.cos(rad);
+      const sin = Math.sin(rad);
+
+      let deltaImgX = dx * cos + dy * sin;
+      let deltaImgY = -dx * sin + dy * cos;
+
+      if (localAdj.flipH) deltaImgX = -deltaImgX;
+      if (localAdj.flipV) deltaImgY = -deltaImgY;
+
+      const newCropX =
+        layout.excessX > 0
+          ? Math.max(0, Math.min(1, dragStartRef.current.initCropX - deltaImgX / layout.excessX))
+          : 0.5;
+
+      const newCropY =
+        layout.excessY > 0
+          ? Math.max(0, Math.min(1, dragStartRef.current.initCropY - deltaImgY / layout.excessY))
+          : 0.5;
+
+      setLocalAdj((prev) => ({
+        ...prev,
+        cropX: newCropX,
+        cropY: newCropY,
+      }));
+    };
+
+    const handleWindowMouseMove = (e: MouseEvent) => {
+      handlePointerMove(e.clientX, e.clientY);
+    };
+
+    const handleWindowTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+    };
+
+    const handlePointerUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleWindowMouseMove);
+    window.addEventListener('mouseup', handlePointerUp);
+    window.addEventListener('touchmove', handleWindowTouchMove, { passive: true });
+    window.addEventListener('touchend', handlePointerUp);
+    window.addEventListener('touchcancel', handlePointerUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleWindowMouseMove);
+      window.removeEventListener('mouseup', handlePointerUp);
+      window.removeEventListener('touchmove', handleWindowTouchMove);
+      window.removeEventListener('touchend', handlePointerUp);
+      window.removeEventListener('touchcancel', handlePointerUp);
+    };
+  }, [
+    isDragging,
+    localAdj.rotation,
+    localAdj.flipH,
+    localAdj.flipV,
+    layout.excessX,
+    layout.excessY,
+  ]);
+
+  // Wheel zoom handler
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = -e.deltaY * 0.002;
+    setLocalAdj((prev) => ({
+      ...prev,
+      zoom: Math.max(1.0, Math.min(3.5, Number((prev.zoom + delta).toFixed(2)))),
+    }));
   };
 
   if (!isCropModalOpen || !photo) {
     return null;
   }
 
-  const isRotated90 = localAdj.rotation === 90 || localAdj.rotation === 270;
-  const boxW = slotAspect >= 1 ? 340 : 340 * slotAspect;
-  const boxH = slotAspect >= 1 ? 340 / slotAspect : 340;
-  const rotScale = isRotated90
-    ? localAdj.fitMode === 'contain'
-      ? Math.min(boxW / boxH, boxH / boxW)
-      : Math.max(boxW / boxH, boxH / boxW)
-    : 1;
-  const effectiveZoom = localAdj.zoom * rotScale;
+  const hasPannableOverflow = layout.excessX > 0 || layout.excessY > 0;
 
   return createPortal(
     <div
@@ -183,41 +303,58 @@ export function CropModal() {
               aria-label="Crop interactive viewport"
               tabIndex={0}
               onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onMouseLeave={handleMouseUp}
-              className={`relative overflow-hidden bg-white shadow-md-2 border-2 border-md-primary flex items-center justify-center ${
-                isDragging ? 'cursor-grabbing' : 'cursor-grab'
+              onTouchStart={handleTouchStart}
+              onWheel={handleWheel}
+              className={`relative overflow-hidden bg-white shadow-md-2 border-2 border-md-primary flex items-center justify-center select-none ${
+                isDragging
+                  ? 'cursor-grabbing'
+                  : hasPannableOverflow
+                    ? 'cursor-grab'
+                    : 'cursor-default'
               }`}
               style={{
                 width: `${boxW}px`,
                 height: `${boxH}px`,
+                touchAction: 'none',
               }}
             >
-              {/* Image being cropped */}
-              <img
-                src={photo.dataUrl}
-                alt={photo.name}
-                draggable={false}
-                className="max-w-none pointer-events-none select-none transition-transform"
+              {/* Transformed anchor container */}
+              <div
                 style={{
-                  width:
-                    localAdj.fitMode === 'contain' && !isRotated90
-                      ? '100%'
-                      : `${100 * effectiveZoom}%`,
-                  height:
-                    localAdj.fitMode === 'contain' && !isRotated90
-                      ? '100%'
-                      : `${100 * effectiveZoom}%`,
-                  objectFit: localAdj.fitMode === 'contain' ? 'contain' : 'cover',
-                  objectPosition: `${localAdj.cropX * 100}% ${localAdj.cropY * 100}%`,
-                  transform: `rotate(${localAdj.rotation}deg) scale(${localAdj.flipH ? -1 : 1}, ${localAdj.flipV ? -1 : 1})`,
-                  filter: buildCssFilterString(localAdj),
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  width: `${layout.targetW}px`,
+                  height: `${layout.targetH}px`,
+                  transform: `translate(-50%, -50%) rotate(${localAdj.rotation}deg) scale(${localAdj.flipH ? -1 : 1}, ${localAdj.flipV ? -1 : 1})`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
                 }}
-              />
+              >
+                <img
+                  src={photo.dataUrl}
+                  alt={photo.name}
+                  draggable={false}
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    width: `${layout.drawW}px`,
+                    height: `${layout.drawH}px`,
+                    maxWidth: 'none',
+                    maxHeight: 'none',
+                    transform: `translate(calc(-50% + ${layout.panOffsetX}px), calc(-50% + ${layout.panOffsetY}px))`,
+                    filter: buildCssFilterString(localAdj),
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                  }}
+                />
+              </div>
 
               {/* Rule of Thirds Grid overlay */}
-              <div className="absolute inset-0 pointer-events-none grid grid-cols-3 grid-rows-3 opacity-30">
+              <div className="absolute inset-0 pointer-events-none grid grid-cols-3 grid-rows-3 opacity-30 z-10">
                 <div className="border-r border-b border-white/60"></div>
                 <div className="border-r border-b border-white/60"></div>
                 <div className="border-b border-white/60"></div>
@@ -231,13 +368,44 @@ export function CropModal() {
             </div>
 
             <p className="text-[11px] text-md-on-surface-variant mt-3 text-center">
-              Click & drag image inside the frame to adjust framing.
+              {hasPannableOverflow
+                ? 'Click & drag image inside the frame to adjust framing. Scroll to zoom.'
+                : 'Zoom in or switch to Fill mode to pan & adjust framing.'}
             </p>
           </div>
 
           {/* Right 1 Col: Controls & Color Sliders */}
           <div className="space-y-4 flex flex-col justify-between text-xs">
             <div className="space-y-4">
+              {/* Fit Mode Toggle */}
+              <div className="space-y-1.5">
+                <label className="font-semibold text-md-on-surface block">{t('fitMode')}</label>
+                <div className="flex gap-1.5 p-1 bg-md-surface-container rounded-md-md">
+                  <button
+                    type="button"
+                    onClick={() => setLocalAdj((prev) => ({ ...prev, fitMode: 'cover' }))}
+                    className={`flex-1 py-1 rounded text-[11px] font-semibold transition-colors ${
+                      localAdj.fitMode === 'cover'
+                        ? 'bg-md-primary text-white shadow-sm'
+                        : 'text-md-on-surface-variant hover:text-md-on-surface'
+                    }`}
+                  >
+                    {t('fitCover')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLocalAdj((prev) => ({ ...prev, fitMode: 'contain' }))}
+                    className={`flex-1 py-1 rounded text-[11px] font-semibold transition-colors ${
+                      localAdj.fitMode === 'contain'
+                        ? 'bg-md-primary text-white shadow-sm'
+                        : 'text-md-on-surface-variant hover:text-md-on-surface'
+                    }`}
+                  >
+                    {t('fitContain')}
+                  </button>
+                </div>
+              </div>
+
               {/* Zoom Slider */}
               <div className="space-y-1.5">
                 <div className="flex justify-between font-semibold text-md-on-surface">
