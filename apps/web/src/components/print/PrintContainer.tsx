@@ -1,0 +1,192 @@
+import { useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import { useProject } from '../../state/ProjectContext.js';
+import {
+  getPaperDimensions,
+  computeUniformGridLayout,
+  packMixedPhotos,
+  PHOTO_PRESETS,
+  generateCutMarks,
+  CutMarkStyle,
+} from '@pixture/layout-engine';
+import { buildCssFilterString } from '@pixture/print-core';
+
+export function PrintContainer() {
+  const { config, pages, photos } = useProject();
+
+  const printRoot = document.getElementById('print-root');
+  if (!printRoot) return null;
+
+  const paperDim = getPaperDimensions(
+    config.paperId,
+    config.orientation,
+    config.customWidthMm,
+    config.customHeightMm
+  );
+
+  const photoMap = useMemo(() => {
+    const map = new Map();
+    for (const p of photos) {
+      map.set(p.id, p);
+    }
+    return map;
+  }, [photos]);
+
+  const slotsGeometry = useMemo(() => {
+    if (config.layoutMode === 'mixed') {
+      const itemsToPack = photos.map((p) => {
+        const preset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
+        return {
+          id: p.id,
+          widthMm: config.customPhotoWidthMm || preset.widthMm,
+          heightMm: config.customPhotoHeightMm || preset.heightMm,
+        };
+      });
+
+      const packResult = packMixedPhotos({
+        sheetWidthMm: paperDim.widthMm,
+        sheetHeightMm: paperDim.heightMm,
+        marginsMm: config.marginsMm,
+        gapMm: config.gapXMm,
+        items: itemsToPack,
+      });
+
+      return packResult.placedItems.map((item, idx) => ({
+        index: idx,
+        xMm: item.xMm,
+        yMm: item.yMm,
+        widthMm: item.widthMm,
+        heightMm: item.heightMm,
+        pageIndex: item.pageIndex,
+      }));
+    }
+
+    const photoPreset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
+    const photoW = config.customPhotoWidthMm || photoPreset.widthMm;
+    const photoH = config.customPhotoHeightMm || photoPreset.heightMm;
+
+    const grid = computeUniformGridLayout({
+      sheetWidthMm: paperDim.widthMm,
+      sheetHeightMm: paperDim.heightMm,
+      marginsMm: config.marginsMm,
+      slotWidthMm: photoW,
+      slotHeightMm: photoH,
+      gapXMm: config.gapXMm,
+      gapYMm: config.gapYMm,
+      autoOrientation: config.autoOrientation,
+    });
+
+    return grid.slots.map((s) => ({
+      index: s.index,
+      xMm: s.xMm,
+      yMm: s.yMm,
+      widthMm: s.widthMm,
+      heightMm: s.heightMm,
+      pageIndex: 0,
+    }));
+  }, [config, paperDim, photos]);
+
+  const cutMarks = useMemo(() => {
+    return generateCutMarks({
+      slots: slotsGeometry,
+      style: config.cutMarkStyle as CutMarkStyle,
+      bleedMm: config.bleedMm,
+    });
+  }, [slotsGeometry, config.cutMarkStyle, config.bleedMm]);
+
+  return createPortal(
+    <div>
+      {pages.map((page) => (
+        <div
+          key={page.id}
+          className="print-page relative bg-white overflow-hidden"
+          style={{
+            width: `${paperDim.widthMm}mm`,
+            height: `${paperDim.heightMm}mm`,
+          }}
+        >
+          {/* Vector Cut Marks in print */}
+          {config.cutMarkStyle !== 'none' && (
+            <svg
+              className="absolute inset-0 pointer-events-none z-10"
+              style={{
+                width: `${paperDim.widthMm}mm`,
+                height: `${paperDim.heightMm}mm`,
+              }}
+              viewBox={`0 0 ${paperDim.widthMm} ${paperDim.heightMm}`}
+            >
+              {cutMarks.lines.map((line, idx) => (
+                <line
+                  key={idx}
+                  x1={line.x1Mm}
+                  y1={line.y1Mm}
+                  x2={line.x2Mm}
+                  y2={line.y2Mm}
+                  stroke={config.cutMarkColor || '#202124'}
+                  strokeWidth="0.15"
+                  strokeDasharray={line.style === 'dashed' ? '1,1' : undefined}
+                />
+              ))}
+            </svg>
+          )}
+
+          {/* Slots & Photos */}
+          {slotsGeometry.map((slotGeom) => {
+            const assignment = page.slots.find((s) => s.slotIndex === slotGeom.index);
+            const photo = assignment?.photoId ? photoMap.get(assignment.photoId) : null;
+            const adj = assignment?.adjustments;
+
+            if (!photo || !adj) return null;
+
+            return (
+              <div
+                key={slotGeom.index}
+                className="absolute overflow-hidden flex items-center justify-center bg-white"
+                style={{
+                  left: `${slotGeom.xMm}mm`,
+                  top: `${slotGeom.yMm}mm`,
+                  width: `${slotGeom.widthMm}mm`,
+                  height: `${slotGeom.heightMm}mm`,
+                }}
+              >
+                <div
+                  className="relative overflow-hidden w-full h-full flex items-center justify-center bg-white"
+                  style={{
+                    padding: adj.isPolaroid
+                      ? '5mm 5mm 20mm 5mm'
+                      : adj.hasWhiteBorder
+                        ? `${adj.whiteBorderWidthMm}mm`
+                        : 0,
+                  }}
+                >
+                  <img
+                    src={photo.dataUrl}
+                    alt={photo.name}
+                    className="max-w-none select-none"
+                    style={{
+                      width: adj.fitMode === 'contain' ? '100%' : `${100 * adj.zoom}%`,
+                      height: adj.fitMode === 'contain' ? '100%' : `${100 * adj.zoom}%`,
+                      objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
+                      objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
+                      transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
+                      filter: buildCssFilterString(adj),
+                    }}
+                  />
+
+                  {adj.isPolaroid && adj.polaroidCaption && (
+                    <div
+                      className="absolute bottom-1 w-full text-center font-caveat text-black truncate px-1 text-[12pt]"
+                    >
+                      {adj.polaroidCaption}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>,
+    printRoot
+  );
+}

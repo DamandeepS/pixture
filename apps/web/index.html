@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixture - Precision Photo Printing & Grid Layout</title>
+    <meta name="description" content="Precision photo printing, auto-fit grid layouts, cropping, and cut markings with Google-inspired design." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231a73e8'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z'/></svg>" />
+  </head>
+  <body class="bg-md-surface-container-low text-md-on-surface antialiased font-sans select-none overflow-hidden h-screen w-screen">
+    <!-- Skip to main content for A11Y -->
+    <a href="#main-canvas" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2 focus:bg-md-primary focus:text-white focus:rounded-md-md focus:shadow-md-2">
+      Skip to canvas
+    </a>
+
+    <div id="root" class="h-full w-full flex flex-col"></div>
+    <div id="print-root" aria-hidden="true"></div>
+
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
