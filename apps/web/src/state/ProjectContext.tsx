@@ -39,6 +39,7 @@ interface ProjectContextValue extends ProjectState {
   addUploadedPhotos: (files: File[], targetSlotIndex?: number) => Promise<void>;
   loadSamplePhotos: () => void;
   removePhoto: (photoId: string) => void;
+  updatePhoto: (photoId: string, patch: Partial<PhotoAsset>) => void;
   assignPhotoToSlot: (slotIndex: number, photoId: string | null) => void;
   updateSlotAdjustments: (slotIndex: number, adjustments: Partial<PhotoSlotAdjustment>) => void;
   duplicateSlotPhoto: (sourceSlotIndex?: number) => void;
@@ -373,6 +374,31 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           ...prev,
           photos: updatedPhotos,
           pages: updatedPages,
+          canUndo: true,
+          canRedo: false,
+        };
+      });
+    },
+    [recordHistory]
+  );
+
+  const updatePhoto = useCallback(
+    (photoId: string, patch: Partial<PhotoAsset>) => {
+      setState((prev) => {
+        const photoIdx = prev.photos.findIndex((p) => p.id === photoId);
+        if (photoIdx === -1) return prev;
+
+        recordHistory(prev);
+
+        const updatedPhotos = [...prev.photos];
+        updatedPhotos[photoIdx] = {
+          ...updatedPhotos[photoIdx],
+          ...patch,
+        };
+
+        return {
+          ...prev,
+          photos: updatedPhotos,
           canUndo: true,
           canRedo: false,
         };
@@ -925,6 +951,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         addUploadedPhotos,
         loadSamplePhotos,
         removePhoto,
+        updatePhoto,
         assignPhotoToSlot,
         updateSlotAdjustments,
         duplicateSlotPhoto,

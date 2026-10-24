@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   FileText,
   Scissors,
@@ -13,6 +13,11 @@ import {
   Plus,
   Minus,
   Sparkles,
+  Wand2,
+  Palette,
+  Check,
+  Pipette,
+  RotateCcw,
 } from 'lucide-react';
 import { useProject } from '../../state/ProjectContext.js';
 import { useI18n } from '@pixture/i18n';
@@ -25,6 +30,11 @@ import {
   getPaperDimensions,
   CutMarkStyle,
 } from '@pixture/layout-engine';
+import {
+  removeImageBackground,
+  compositeWithBackgroundColor,
+  BG_COLOR_PRESETS,
+} from '../../utils/background-removal.js';
 
 export function ToolPanel() {
   const {
@@ -43,10 +53,17 @@ export function ToolPanel() {
     addUploadedPhotos,
     setIsCropModalOpen,
     activeUnit,
+    updatePhoto,
+    announce,
   } = useProject();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
+  const [bgRemovalProgress, setBgRemovalProgress] = useState<{
+    active: boolean;
+    percent: number;
+    status: string;
+  }>({ active: false, percent: 0, status: '' });
 
   const currentPage = pages[currentPageIndex] || pages[0];
   const selectedAssignment =
@@ -57,6 +74,65 @@ export function ToolPanel() {
     ? photos.find((p) => p.id === selectedAssignment.photoId)
     : null;
   const adj = selectedAssignment?.adjustments;
+
+  const handleRemoveBackground = async () => {
+    if (!selectedPhoto) return;
+    try {
+      setBgRemovalProgress({
+        active: true,
+        percent: 10,
+        status: 'Starting AI background removal...',
+      });
+      const original = selectedPhoto.originalDataUrl || selectedPhoto.dataUrl;
+      const cutout = await removeImageBackground(original, (percent, status) => {
+        setBgRemovalProgress({ active: true, percent, status });
+      });
+
+      // Default to clean passport white background
+      const defaultColor = '#ffffff';
+      const compositeDataUrl = await compositeWithBackgroundColor(cutout, defaultColor);
+
+      updatePhoto(selectedPhoto.id, {
+        dataUrl: compositeDataUrl,
+        originalDataUrl: original,
+        cutoutDataUrl: cutout,
+        bgColor: defaultColor,
+      });
+      announce('Background removed and replaced with white background.');
+    } catch (err) {
+      console.error('Failed to remove background:', err);
+      announce('Failed to remove background. Please try again.');
+    } finally {
+      setBgRemovalProgress({ active: false, percent: 0, status: '' });
+    }
+  };
+
+  const handleColorSelect = async (color: string) => {
+    if (!selectedPhoto || !selectedPhoto.cutoutDataUrl) return;
+    try {
+      const compositeDataUrl = await compositeWithBackgroundColor(
+        selectedPhoto.cutoutDataUrl,
+        color
+      );
+      updatePhoto(selectedPhoto.id, {
+        dataUrl: compositeDataUrl,
+        bgColor: color,
+      });
+      announce(`Background set to ${color}`);
+    } catch (err) {
+      console.error('Failed to update background color:', err);
+    }
+  };
+
+  const handleRevertOriginal = () => {
+    if (!selectedPhoto || !selectedPhoto.originalDataUrl) return;
+    updatePhoto(selectedPhoto.id, {
+      dataUrl: selectedPhoto.originalDataUrl,
+      cutoutDataUrl: undefined,
+      bgColor: undefined,
+    });
+    announce('Reverted to original photo.');
+  };
 
   // Compute live capacity info for Sheet tab
   const capacityInfo = useMemo(() => {
@@ -773,12 +849,137 @@ export function ToolPanel() {
 
                 {/* Primary Crop & Adjust Button */}
                 <button
+                  type="button"
                   onClick={() => setIsCropModalOpen(true)}
                   className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md-full bg-md-primary text-white font-semibold shadow-md-1 hover:bg-[#1557b0] transition-colors"
                 >
                   <Crop className="w-4 h-4" />
                   <span>{t('cropAndAdjust')}</span>
                 </button>
+
+                {/* Background Removal & Plain Color Section */}
+                {bgRemovalProgress.active ? (
+                  <div className="p-3 bg-md-surface-container rounded-md-lg space-y-2 border border-md-primary/40 animate-pulse">
+                    <div className="flex items-center justify-between text-xs font-semibold text-md-primary">
+                      <span className="flex items-center gap-1.5">
+                        <Wand2 className="w-3.5 h-3.5 animate-spin text-md-primary" />
+                        {t('removingBackground')}
+                      </span>
+                      <span className="font-mono">{bgRemovalProgress.percent}%</span>
+                    </div>
+                    <div className="w-full bg-md-surface-container-high rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-md-primary h-full transition-all duration-300 rounded-full"
+                        style={{ width: `${bgRemovalProgress.percent}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-md-on-surface-variant italic truncate">
+                      {bgRemovalProgress.status}
+                    </p>
+                  </div>
+                ) : !selectedPhoto.cutoutDataUrl ? (
+                  <button
+                    type="button"
+                    onClick={handleRemoveBackground}
+                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md-md border border-md-outline-variant hover:border-md-primary bg-md-surface-container hover:bg-md-primary-container/30 text-xs font-semibold text-md-on-surface transition-all group/bgbtn"
+                  >
+                    <Wand2 className="w-3.5 h-3.5 text-md-primary group-hover/bgbtn:rotate-12 transition-transform" />
+                    <span>{t('removeBackground')}</span>
+                    <span className="ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-md-full bg-md-primary/10 text-md-primary">
+                      AI • 100% Local
+                    </span>
+                  </button>
+                ) : (
+                  <div className="p-2.5 bg-md-surface-container rounded-md-lg space-y-2.5 border border-md-outline-variant">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-md-on-surface flex items-center gap-1.5">
+                        <Palette className="w-3.5 h-3.5 text-md-primary" />
+                        {t('backgroundColor')}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleRevertOriginal}
+                        className="text-[10px] text-md-primary hover:underline flex items-center gap-1 font-medium"
+                        title={t('revertOriginal')}
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>{t('revertOriginal')}</span>
+                      </button>
+                    </div>
+
+                    {/* Color Swatches Grid */}
+                    <div className="grid grid-cols-7 gap-1.5 items-center">
+                      {BG_COLOR_PRESETS.map((preset) => {
+                        const isSelected = selectedPhoto.bgColor === preset.color;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => handleColorSelect(preset.color)}
+                            className={`h-7 rounded-md-sm flex items-center justify-center relative transition-transform ${
+                              isSelected
+                                ? 'ring-2 ring-md-primary ring-offset-1 scale-110 z-10'
+                                : 'hover:scale-105 border border-md-outline-variant'
+                            }`}
+                            style={{
+                              backgroundColor:
+                                preset.color === 'transparent' ? '#ffffff' : preset.color,
+                              backgroundImage:
+                                preset.color === 'transparent'
+                                  ? 'repeating-conic-gradient(#e0e0e0 0% 25%, transparent 0% 50%) 50% / 8px 8px'
+                                  : undefined,
+                            }}
+                            title={preset.name}
+                            aria-label={preset.name}
+                          >
+                            {isSelected && (
+                              <Check
+                                className={`w-3.5 h-3.5 ${
+                                  preset.color === '#ffffff' ||
+                                  preset.color === '#f2f4f7' ||
+                                  preset.color === 'transparent'
+                                    ? 'text-black'
+                                    : 'text-white'
+                                }`}
+                              />
+                            )}
+                          </button>
+                        );
+                      })}
+
+                      {/* Custom Color Picker Input */}
+                      <label
+                        className={`h-7 rounded-md-sm flex items-center justify-center cursor-pointer border border-md-outline-variant relative overflow-hidden transition-transform hover:scale-105 ${
+                          selectedPhoto.bgColor &&
+                          !BG_COLOR_PRESETS.some((p) => p.color === selectedPhoto.bgColor)
+                            ? 'ring-2 ring-md-primary ring-offset-1 scale-110 z-10'
+                            : ''
+                        }`}
+                        style={{
+                          backgroundColor:
+                            selectedPhoto.bgColor &&
+                            !BG_COLOR_PRESETS.some((p) => p.color === selectedPhoto.bgColor)
+                              ? selectedPhoto.bgColor
+                              : '#e8eaed',
+                        }}
+                        title={t('customColor')}
+                      >
+                        <input
+                          type="color"
+                          value={
+                            selectedPhoto.bgColor && selectedPhoto.bgColor.startsWith('#')
+                              ? selectedPhoto.bgColor
+                              : '#ffffff'
+                          }
+                          onChange={(e) => handleColorSelect(e.target.value)}
+                          className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
+                          aria-label={t('customColor')}
+                        />
+                        <Pipette className="w-3.5 h-3.5 text-md-on-surface-variant pointer-events-none" />
+                      </label>
+                    </div>
+                  </div>
+                )}
 
                 {/* Fitting Mode: Fill vs Fit */}
                 <div className="space-y-1.5">

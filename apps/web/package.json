@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@imgly/background-removal": "^1.7.0",
     "@pixture/design-tokens": "*",
     "@pixture/i18n": "*",
     "@pixture/layout-engine": "*",
@@ -17,6 +18,7 @@
     "canvas-confetti": "^1.9.4",
     "idb-keyval": "^6.2.1",
     "lucide-react": "^1.16.0",
+    "onnxruntime-web": "^1.21.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

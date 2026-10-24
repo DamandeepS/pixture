@@ -1,5 +1,17 @@
 # web
 
+## 1.1.0
+
+### Minor Changes
+
+- Add 100% in-browser AI background removal with plain color replacement (transparent cutouts, official white passport, off-white studio, passport blue, navy, red, and custom color picker).
+
+### Patch Changes
+
+- Updated dependencies
+  - @pixture/print-core@1.1.0
+  - @pixture/i18n@1.1.0
+
 ## 1.0.2
 
 ### Patch Changes

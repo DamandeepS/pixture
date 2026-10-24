@@ -4,6 +4,9 @@ export interface PhotoAsset {
   id: string;
   name: string;
   dataUrl: string; // base64 or object URL
+  originalDataUrl?: string; // original image before background removal
+  cutoutDataUrl?: string; // transparent cutout from background removal
+  bgColor?: string; // 'transparent' or hex color (e.g. '#ffffff')
   width: number;
   height: number;
   type: string;
