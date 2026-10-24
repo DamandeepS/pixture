@@ -178,6 +178,9 @@ export function AppBar() {
             <span className="text-[10px] font-bold uppercase tracking-wider text-md-primary bg-md-primary-container px-1.5 py-0.5 rounded-md-xs">
               Studio
             </span>
+            <span className="text-[10px] font-mono text-md-on-surface-variant font-medium bg-md-surface-container px-1.5 py-0.5 rounded-full border border-md-outline-variant/60 hidden sm:inline">
+              v{__APP_VERSION__}
+            </span>
           </span>
         </div>
 

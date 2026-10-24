@@ -81,7 +81,7 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                 {t('legalAndPrivacy')}
               </h2>
               <p className="text-xs text-md-on-surface-variant">
-                Pixture • Open Source Photography & Print Utility
+                Pixture v{__APP_VERSION__} • Open Source Photography & Print Utility
               </p>
             </div>
           </div>

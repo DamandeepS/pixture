@@ -15,9 +15,12 @@
     "format": "prettier --write .",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
     "ci": "npm run format:check && npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "devDependencies": {
+    "@changesets/cli": "^3.0.3",
     "oxlint": "^1.89.0",
     "prettier": "^3.9.10",
     "turbo": "^2.4.4",

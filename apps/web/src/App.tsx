@@ -8,6 +8,7 @@ import { ToolPanel } from './components/panels/ToolPanel.js';
 import { CropModal } from './components/cropper/CropModal.js';
 import { PrintContainer } from './components/print/PrintContainer.js';
 import { A11yAnnouncer } from './components/common/A11yAnnouncer.js';
+import { PwaUpdatePrompt } from './components/pwa/PwaUpdatePrompt.js';
 import { triggerBrowserPrint } from '@pixture/print-core';
 
 function StudioWorkspace() {
@@ -67,6 +68,9 @@ function StudioWorkspace() {
 
       {/* Dedicated Clean Print Portal */}
       <PrintContainer />
+
+      {/* Progressive Web App (PWA) Live Background Update Prompt */}
+      <PwaUpdatePrompt />
     </div>
   );
 }
