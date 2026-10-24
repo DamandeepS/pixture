@@ -1,5 +1,9 @@
 # Pixture 🎨📸
 
+[![Quality Gates & CI](https://github.com/DamandeepS/pixture/actions/workflows/ci.yml/badge.svg)](https://github.com/DamandeepS/pixture/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Privacy: 100% On-Device](https://img.shields.io/badge/Privacy-100%25%20On--Device-success.svg)](PRIVACY.md)
+
 > Precision Photo Printing, Auto-Grid Layout, Cropping & Cut Markings with Google Material 3 Design.
 
 Pixture is a client-side photo printing and imposition layout web application built with a Google-inspired Material 3 aesthetic. It lets you compose photos onto standard or custom paper sizes, calculates maximum yield, provides precision cropping and color adjustments, and exports print-ready sheets with accurate cut marks.
