@@ -97,3 +97,19 @@ npm run build
 ```bash
 npm run test
 ```
+
+---
+
+## Privacy & Security
+
+- **100% Client-Side:** Photos never leave your device. All rendering, cropping, color adjustments, and exports occur locally in browser memory.
+- **Zero Telemetry:** No cookies, no trackers, and no external analytics beacons.
+- **Biometric Safety:** No facial recognition or data harvesting.
+- See [PRIVACY.md](PRIVACY.md), [TERMS.md](TERMS.md), and [SECURITY.md](SECURITY.md) for complete details.
+
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LICENSE) and [NOTICE](NOTICE) files for details.
+
