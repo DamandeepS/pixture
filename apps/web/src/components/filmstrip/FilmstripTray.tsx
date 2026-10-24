@@ -18,6 +18,7 @@ export function FilmstripTray() {
     autoPackAllPhotos,
     selectedSlotIndex,
     assignPhotoToSlot,
+    loadSamplePhotos,
     announce,
   } = useProject();
 
@@ -107,9 +108,18 @@ export function FilmstripTray() {
       {/* Scrolling Filmstrip Gallery */}
       <div className="flex-1 h-full flex items-center gap-3 overflow-x-auto py-1">
         {photos.length === 0 ? (
-          <div className="flex items-center gap-2 text-md-on-surface-variant text-xs opacity-60 italic">
-            <ImageIcon className="w-4 h-4" />
-            <span>{t('dropPhotosHere')}</span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-md-on-surface-variant text-xs opacity-70">
+              <ImageIcon className="w-4 h-4" />
+              <span>{t('dropPhotosHere')}</span>
+            </div>
+            <button
+              onClick={loadSamplePhotos}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md-full bg-md-primary-container text-md-on-primary-container border border-md-primary/40 hover:border-md-primary font-semibold text-xs transition-colors shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-google-yellow" />
+              <span>{t('loadSamplePhotos')}</span>
+            </button>
           </div>
         ) : (
           photos.map((photo) => (

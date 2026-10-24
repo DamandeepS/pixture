@@ -9,7 +9,8 @@ import {
   Trash2,
   Crop,
   RotateCw,
-  Image as ImageIcon,
+  Scissors,
+  Sparkles,
 } from 'lucide-react';
 import { useProject } from '../../state/ProjectContext.js';
 import { useI18n } from '@pixture/i18n';
@@ -32,9 +33,13 @@ export function SheetCanvas() {
     currentPageIndex,
     selectedSlotIndex,
     setSelectedSlotIndex,
+    showCutMarksOnCanvas,
+    setShowCutMarksOnCanvas,
     setIsCropModalOpen,
     assignPhotoToSlot,
     updateSlotAdjustments,
+    addUploadedPhotos,
+    loadSamplePhotos,
     addNewPage,
     removeCurrentPage,
     goToPage,
@@ -46,6 +51,8 @@ export function SheetCanvas() {
 
   const { t } = useI18n();
   const containerRef = useRef<HTMLDivElement>(null);
+  const slotFileInputRef = useRef<HTMLInputElement>(null);
+  const [targetSlotForUpload, setTargetSlotForUpload] = useState<number | null>(null);
   const [autoScale, setAutoScale] = useState(1.0);
   const [dragOverSlotIndex, setDragOverSlotIndex] = useState<number | null>(null);
 
@@ -61,13 +68,16 @@ export function SheetCanvas() {
 
   // Compute layout slots geometry
   const slotsGeometry = useMemo(() => {
+    const photoPreset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
+    const photoW = config.customPhotoWidthMm || photoPreset.widthMm;
+    const photoH = config.customPhotoHeightMm || photoPreset.heightMm;
+
     if (config.layoutMode === 'mixed') {
       const itemsToPack = photos.map((p) => {
-        const preset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
         return {
           id: p.id,
-          widthMm: config.customPhotoWidthMm || preset.widthMm,
-          heightMm: config.customPhotoHeightMm || preset.heightMm,
+          widthMm: photoW,
+          heightMm: photoH,
         };
       });
 
@@ -90,10 +100,6 @@ export function SheetCanvas() {
       }));
     }
 
-    const photoPreset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-    const photoW = config.customPhotoWidthMm || photoPreset.widthMm;
-    const photoH = config.customPhotoHeightMm || photoPreset.heightMm;
-
     const grid = computeUniformGridLayout({
       sheetWidthMm: paperDim.widthMm,
       sheetHeightMm: paperDim.heightMm,
@@ -103,6 +109,7 @@ export function SheetCanvas() {
       gapXMm: config.gapXMm,
       gapYMm: config.gapYMm,
       autoOrientation: config.autoOrientation,
+      allowAutoRotate: photoPreset.allowAutoRotate !== false,
     });
 
     return grid.slots;
@@ -113,7 +120,7 @@ export function SheetCanvas() {
     function calculateFit() {
       if (!containerRef.current) return;
       const { clientWidth, clientHeight } = containerRef.current;
-      const padding = 80;
+      const padding = 100;
       const availableW = clientWidth - padding;
       const availableH = clientHeight - padding;
 
@@ -124,8 +131,8 @@ export function SheetCanvas() {
 
       const scaleX = availableW / sheetW;
       const scaleY = availableH / sheetH;
-      const fit = Math.min(scaleX, scaleY, 1.6);
-      setAutoScale(Math.max(0.4, fit));
+      const fit = Math.min(scaleX, scaleY, 1.4);
+      setAutoScale(Math.max(0.35, fit));
     }
 
     calculateFit();
@@ -145,6 +152,8 @@ export function SheetCanvas() {
       slots: slotsGeometry,
       style: config.cutMarkStyle as CutMarkStyle,
       bleedMm: config.bleedMm,
+      markLengthMm: 2.0,
+      markOffsetMm: 0.5,
     });
   }, [slotsGeometry, config.cutMarkStyle, config.bleedMm]);
 
@@ -167,12 +176,28 @@ export function SheetCanvas() {
     e.preventDefault();
     setDragOverSlotIndex(null);
 
-    // Check for photoId transfer
+    // 1. Files dragged from desktop / Finder
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      addUploadedPhotos(Array.from(e.dataTransfer.files), slotIdx);
+      announce(t('announcementPhotoAdded', { name: e.dataTransfer.files[0].name }));
+      return;
+    }
+
+    // 2. Photo dragged from bottom filmstrip
     const photoId = e.dataTransfer.getData('text/plain');
     if (photoId) {
       assignPhotoToSlot(slotIdx, photoId);
       announce(t('announcementPhotoAdded', { name: photoId }));
     }
+  };
+
+  const handleSlotFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0 && targetSlotForUpload !== null) {
+      addUploadedPhotos(Array.from(files), targetSlotForUpload);
+    }
+    e.target.value = '';
+    setTargetSlotForUpload(null);
   };
 
   const photoMap = useMemo(() => {
@@ -187,14 +212,25 @@ export function SheetCanvas() {
     <main
       id="main-canvas"
       ref={containerRef}
-      className="flex-1 bg-md-surface-container-low relative overflow-auto flex flex-col items-center justify-start p-8 select-none focus:outline-none"
+      className="flex-1 bg-md-surface-container-low relative overflow-auto flex flex-col items-center justify-start p-6 select-none focus:outline-none"
       tabIndex={-1}
       aria-label="Photo sheet canvas editor"
     >
-      {/* Floating Canvas Controls (Zoom & Page switcher) */}
-      <div className="sticky top-0 z-30 mb-4 flex items-center justify-between w-full max-w-4xl px-4 pointer-events-none">
+      {/* Hidden file input for slot click-to-upload */}
+      <input
+        ref={slotFileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleSlotFileChange}
+        className="hidden"
+        aria-hidden="true"
+      />
+
+      {/* Floating Canvas Controls (Page Switcher, Cut Mark Toggle, Sample Photos, Zoom) */}
+      <div className="sticky top-0 z-30 mb-4 flex items-center justify-between w-full max-w-4xl px-2 pointer-events-none">
         {/* Page Switcher */}
-        <div className="flex items-center gap-2 bg-md-surface/90 backdrop-blur-md px-3 py-1.5 rounded-md-full shadow-md-2 border border-md-outline-variant pointer-events-auto">
+        <div className="flex items-center gap-1.5 bg-md-surface/95 backdrop-blur-md px-3 py-1.5 rounded-md-full shadow-md-2 border border-md-outline-variant pointer-events-auto">
           <button
             onClick={() => goToPage(currentPageIndex - 1)}
             disabled={currentPageIndex <= 0}
@@ -239,10 +275,35 @@ export function SheetCanvas() {
           )}
         </div>
 
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-1 bg-md-surface/90 backdrop-blur-md px-3 py-1.5 rounded-md-full shadow-md-2 border border-md-outline-variant pointer-events-auto">
+        {/* Center Quick Helpers: Toggle Cut Marks & Load Sample Photos */}
+        <div className="flex items-center gap-2 pointer-events-auto">
           <button
-            onClick={() => setZoomScale((z) => Math.max(0.5, z - 0.15))}
+            onClick={() => setShowCutMarksOnCanvas((prev) => !prev)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md-full text-xs font-semibold shadow-md-1 transition-all ${
+              showCutMarksOnCanvas
+                ? 'bg-md-primary-container text-md-on-primary-container border border-md-primary'
+                : 'bg-md-surface hover:bg-md-surface-container text-md-on-surface-variant border border-md-outline-variant'
+            }`}
+            title="Toggle cut marks on canvas preview"
+          >
+            <Scissors className="w-3.5 h-3.5" />
+            <span>{t('showCutMarks')}</span>
+          </button>
+
+          <button
+            onClick={loadSamplePhotos}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md-full text-xs font-semibold bg-md-surface hover:bg-md-surface-container border border-md-outline-variant text-md-on-surface shadow-md-1 transition-colors"
+            title="Load sample photos for quick demo"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-google-yellow" />
+            <span>{t('loadSamplePhotos')}</span>
+          </button>
+        </div>
+
+        {/* Zoom Controls */}
+        <div className="flex items-center gap-1 bg-md-surface/95 backdrop-blur-md px-3 py-1.5 rounded-md-full shadow-md-2 border border-md-outline-variant pointer-events-auto">
+          <button
+            onClick={() => setZoomScale((z) => Math.max(0.4, z - 0.15))}
             className="p-1 rounded-md-full hover:bg-md-surface-container transition-colors text-md-on-surface-variant"
             title="Zoom Out"
             aria-label="Zoom Out"
@@ -272,7 +333,7 @@ export function SheetCanvas() {
       </div>
 
       {/* Ruler & Paper Canvas Area */}
-      <div className="relative flex flex-col items-start shadow-md-3 rounded-md-sm bg-md-surface border border-md-outline-variant transition-transform duration-100 ease-out">
+      <div className="relative flex flex-col items-start shadow-2xl rounded-md-sm bg-white border border-md-outline-variant transition-transform duration-100 ease-out mb-8">
         {/* Horizontal Top Ruler */}
         <div className="flex">
           {/* Top-left corner box */}
@@ -298,7 +359,7 @@ export function SheetCanvas() {
 
           {/* Actual Sheet Paper */}
           <div
-            className="relative bg-white overflow-hidden shadow-inner cursor-default"
+            className="relative bg-white overflow-hidden cursor-default"
             style={{
               width: `${sheetPixelW}px`,
               height: `${sheetPixelH}px`,
@@ -317,10 +378,10 @@ export function SheetCanvas() {
               aria-hidden="true"
             />
 
-            {/* Cut Markings Lines */}
-            {config.cutMarkStyle !== 'none' && (
+            {/* Cut Markings Lines (Clean & Subtle preview) */}
+            {showCutMarksOnCanvas && config.cutMarkStyle !== 'none' && (
               <svg
-                className="absolute inset-0 pointer-events-none z-10"
+                className="absolute inset-0 pointer-events-none z-10 opacity-75"
                 width={sheetPixelW}
                 height={sheetPixelH}
                 aria-hidden="true"
@@ -332,9 +393,9 @@ export function SheetCanvas() {
                     y1={line.y1Mm * pxPerMm}
                     x2={line.x2Mm * pxPerMm}
                     y2={line.y2Mm * pxPerMm}
-                    stroke={config.cutMarkColor || '#202124'}
-                    strokeWidth={Math.max(1, 0.15 * pxPerMm)}
-                    strokeDasharray={line.style === 'dashed' ? `${4 * pxPerMm},${4 * pxPerMm}` : undefined}
+                    stroke={config.cutMarkColor || '#5f6368'}
+                    strokeWidth={Math.max(1, 0.12 * pxPerMm)}
+                    strokeDasharray={line.style === 'dashed' ? `${3 * pxPerMm},${3 * pxPerMm}` : undefined}
                   />
                 ))}
               </svg>
@@ -369,13 +430,21 @@ export function SheetCanvas() {
                     if (photo) {
                       setSelectedSlotIndex(slotGeom.index);
                       setIsCropModalOpen(true);
+                    } else {
+                      setTargetSlotForUpload(slotGeom.index);
+                      slotFileInputRef.current?.click();
                     }
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
                       setSelectedSlotIndex(slotGeom.index);
-                      if (photo) setIsCropModalOpen(true);
+                      if (photo) {
+                        setIsCropModalOpen(true);
+                      } else {
+                        setTargetSlotForUpload(slotGeom.index);
+                        slotFileInputRef.current?.click();
+                      }
                     } else if (e.key === 'Delete' || e.key === 'Backspace') {
                       if (photo) {
                         e.preventDefault();
@@ -389,7 +458,7 @@ export function SheetCanvas() {
                   className={`absolute group cursor-pointer transition-all duration-150 overflow-hidden ${
                     isSelected
                       ? 'ring-2 ring-md-primary ring-offset-2 z-20 shadow-md-2'
-                      : 'hover:ring-1 hover:ring-md-primary/50'
+                      : 'hover:ring-1 hover:ring-md-primary/60'
                   } ${
                     isDragOver
                       ? 'ring-2 ring-google-green bg-google-green/10 scale-[1.02] z-30'
@@ -403,12 +472,26 @@ export function SheetCanvas() {
                     backgroundColor: photo ? '#ffffff' : '#f8f9fa',
                   }}
                 >
-                  {/* Empty Slot Placeholder */}
+                  {/* Empty Slot Placeholder with Click-to-Upload */}
                   {!photo && (
-                    <div className="w-full h-full border border-dashed border-md-outline flex flex-col items-center justify-center p-2 text-center text-md-on-surface-variant hover:border-md-primary hover:text-md-primary transition-colors">
-                      <ImageIcon className="w-5 h-5 mb-1 opacity-40" />
-                      <span className="text-[10px] font-medium leading-tight opacity-70">
+                    <div
+                      className="w-full h-full border border-dashed border-md-outline/70 hover:border-md-primary hover:bg-md-primary-container/20 flex flex-col items-center justify-center p-2 text-center text-md-on-surface-variant hover:text-md-primary transition-all group/slot cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedSlotIndex(slotGeom.index);
+                        setTargetSlotForUpload(slotGeom.index);
+                        slotFileInputRef.current?.click();
+                      }}
+                      title={t('clickToUpload')}
+                    >
+                      <div className="w-7 h-7 rounded-md-full bg-md-surface-container group-hover/slot:bg-md-primary group-hover/slot:text-white flex items-center justify-center transition-colors mb-1 shadow-sm">
+                        <Plus className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-semibold leading-tight">
                         {t('addPhotos')}
+                      </span>
+                      <span className="text-[8px] opacity-60 mt-0.5">
+                        {slotGeom.widthMm.toFixed(0)} × {slotGeom.heightMm.toFixed(0)} mm
                       </span>
                     </div>
                   )}
@@ -452,7 +535,7 @@ export function SheetCanvas() {
                       </div>
 
                       {/* Hover / Selected Overlay Toolbar */}
-                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center gap-1 bg-black/70 backdrop-blur-sm p-1 rounded-md-full text-white transition-opacity z-20">
+                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center gap-1 bg-black/75 backdrop-blur-sm p-1 rounded-md-full text-white transition-opacity z-20">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

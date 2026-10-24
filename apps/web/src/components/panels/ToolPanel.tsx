@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   FileText,
   Scissors,
@@ -8,6 +8,8 @@ import {
   Trash2,
   Copy,
   Info,
+  Upload,
+  Plus,
 } from 'lucide-react';
 import { useProject } from '../../state/ProjectContext.js';
 import { useI18n } from '@pixture/i18n';
@@ -28,14 +30,17 @@ export function ToolPanel() {
     photos,
     currentPageIndex,
     selectedSlotIndex,
+    activePanelTab: activeTab,
+    setActivePanelTab: setActiveTab,
     assignPhotoToSlot,
     updateSlotAdjustments,
+    addUploadedPhotos,
     setIsCropModalOpen,
     activeUnit,
   } = useProject();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<'sheet' | 'cutmarks' | 'inspector'>('sheet');
 
   const currentPage = pages[currentPageIndex] || pages[0];
   const selectedAssignment = selectedSlotIndex !== null
@@ -426,12 +431,68 @@ export function ToolPanel() {
         {/* TAB 3: PHOTO INSPECTOR */}
         {activeTab === 'inspector' && (
           <>
-            {selectedSlotIndex === null || !selectedAssignment || !selectedPhoto || !adj ? (
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0 && selectedSlotIndex !== null) {
+                  addUploadedPhotos(Array.from(e.target.files), selectedSlotIndex);
+                }
+                e.target.value = '';
+              }}
+              className="hidden"
+              aria-hidden="true"
+            />
+
+            {selectedSlotIndex === null ? (
               <div className="py-12 text-center text-md-on-surface-variant flex flex-col items-center justify-center gap-2">
                 <Sliders className="w-8 h-8 opacity-40 mb-1" />
                 <p className="text-xs max-w-[200px] leading-relaxed">
                   {t('noPhotoSelected')}
                 </p>
+              </div>
+            ) : !selectedPhoto || !adj ? (
+              <div className="space-y-4">
+                <div className="p-3 bg-md-surface-container rounded-md-lg">
+                  <div className="font-semibold text-xs text-md-on-surface">
+                    Slot #{selectedSlotIndex + 1} (Empty)
+                  </div>
+                  <p className="text-[11px] text-md-on-surface-variant mt-1">
+                    Add a photo to this slot by uploading or choosing from your photos.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md-full bg-md-primary text-white font-semibold shadow-md-1 hover:bg-[#1557b0] transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Upload Photo to this Slot</span>
+                </button>
+
+                {photos.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    <span className="font-semibold text-[11px] text-md-on-surface-variant uppercase tracking-wider">
+                      Or Choose From Uploaded Photos:
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {photos.map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => assignPhotoToSlot(selectedSlotIndex, p.id)}
+                          className="aspect-square rounded-md-sm border border-md-outline-variant hover:border-md-primary hover:scale-105 transition-all overflow-hidden bg-md-surface-container group/btn relative"
+                          title={p.name}
+                        >
+                          <img src={p.dataUrl} alt={p.name} className="w-full h-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/btn:opacity-100 flex items-center justify-center text-white text-[10px] font-bold">
+                            <Plus className="w-4 h-4" />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-4">

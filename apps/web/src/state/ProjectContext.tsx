@@ -11,6 +11,7 @@ import {
 } from '@pixture/print-core';
 import { Unit, computeUniformGridLayout, getPaperDimensions, PHOTO_PRESETS } from '@pixture/layout-engine';
 import { ProjectState, INITIAL_STATE } from './project-store.js';
+import { SAMPLE_PHOTOS } from '../utils/samplePhotos.js';
 
 interface ProjectContextValue extends ProjectState {
   setProjectName: (name: string) => void;
@@ -18,8 +19,11 @@ interface ProjectContextValue extends ProjectState {
   setUnit: (unit: Unit) => void;
   setZoomScale: (zoom: number | ((prev: number) => number)) => void;
   setSelectedSlotIndex: (idx: number | null) => void;
+  setActivePanelTab: (tab: 'sheet' | 'cutmarks' | 'inspector') => void;
+  setShowCutMarksOnCanvas: (show: boolean | ((prev: boolean) => boolean)) => void;
   setIsCropModalOpen: (open: boolean) => void;
-  addUploadedPhotos: (files: File[]) => Promise<void>;
+  addUploadedPhotos: (files: File[], targetSlotIndex?: number) => Promise<void>;
+  loadSamplePhotos: () => void;
   removePhoto: (photoId: string) => void;
   assignPhotoToSlot: (slotIndex: number, photoId: string | null) => void;
   updateSlotAdjustments: (slotIndex: number, adjustments: Partial<PhotoSlotAdjustment>) => void;
@@ -38,10 +42,32 @@ interface ProjectContextValue extends ProjectState {
 
 const ProjectContext = createContext<ProjectContextValue | null>(null);
 
-const STORAGE_KEY = 'pixture_active_project_v1';
+const STORAGE_KEY = 'pixture_active_project_v2';
 
 export function ProjectProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ProjectState>(INITIAL_STATE);
+  const [state, setState] = useState<ProjectState>(() => {
+    // Start with sample photos populated so the first impression is gorgeous and ready to interact
+    const initialSlots: PageSlotAssignment[] = SAMPLE_PHOTOS.map((photo, idx) => ({
+      slotIndex: idx,
+      photoId: photo.id,
+      adjustments: { ...DEFAULT_ADJUSTMENTS },
+    }));
+
+    return {
+      ...INITIAL_STATE,
+      photos: [...SAMPLE_PHOTOS],
+      pages: [
+        {
+          id: 'page_1',
+          pageNumber: 1,
+          slots: initialSlots,
+        },
+      ],
+      selectedSlotIndex: 0,
+      activePanelTab: 'inspector',
+    };
+  });
+
   const historyRef = useRef<{
     past: ProjectState[];
     future: ProjectState[];
@@ -65,8 +91,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
             ...prev,
             projectName: saved.projectName || prev.projectName,
             config: saved.config || prev.config,
-            photos: saved.photos || prev.photos,
-            pages: saved.pages || prev.pages,
+            photos: saved.photos && saved.photos.length > 0 ? saved.photos : prev.photos,
+            pages: saved.pages && saved.pages.length > 0 ? saved.pages : prev.pages,
             activeUnit: saved.activeUnit || prev.activeUnit,
           }));
         }
@@ -123,14 +149,29 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setSelectedSlotIndex = useCallback((idx: number | null) => {
-    setState((prev) => ({ ...prev, selectedSlotIndex: idx }));
+    setState((prev) => ({
+      ...prev,
+      selectedSlotIndex: idx,
+      activePanelTab: idx !== null ? 'inspector' : prev.activePanelTab,
+    }));
+  }, []);
+
+  const setActivePanelTab = useCallback((tab: 'sheet' | 'cutmarks' | 'inspector') => {
+    setState((prev) => ({ ...prev, activePanelTab: tab }));
+  }, []);
+
+  const setShowCutMarksOnCanvas = useCallback((showOrFn: boolean | ((prev: boolean) => boolean)) => {
+    setState((prev) => ({
+      ...prev,
+      showCutMarksOnCanvas: typeof showOrFn === 'function' ? showOrFn(prev.showCutMarksOnCanvas) : showOrFn,
+    }));
   }, []);
 
   const setIsCropModalOpen = useCallback((open: boolean) => {
     setState((prev) => ({ ...prev, isCropModalOpen: open }));
   }, []);
 
-  const addUploadedPhotos = useCallback(async (files: File[]) => {
+  const addUploadedPhotos = useCallback(async (files: File[], targetSlotIndex?: number) => {
     const newAssets: PhotoAsset[] = [];
 
     for (const file of files) {
@@ -169,46 +210,78 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       const updatedPhotos = [...prev.photos, ...newAssets];
       let updatedPages = [...prev.pages];
 
-      // Auto-assign uploaded photos to empty slots on current page
       const curPage = { ...updatedPages[prev.currentPageIndex] };
       const curSlots = [...curPage.slots];
 
-      // Compute grid capacity
-      const paperDim = getPaperDimensions(
-        prev.config.paperId,
-        prev.config.orientation,
-        prev.config.customWidthMm,
-        prev.config.customHeightMm
-      );
-
-      const photoPreset = PHOTO_PRESETS[prev.config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-      const photoW = prev.config.customPhotoWidthMm || photoPreset.widthMm;
-      const photoH = prev.config.customPhotoHeightMm || photoPreset.heightMm;
-
-      const grid = computeUniformGridLayout({
-        sheetWidthMm: paperDim.widthMm,
-        sheetHeightMm: paperDim.heightMm,
-        marginsMm: prev.config.marginsMm,
-        slotWidthMm: photoW,
-        slotHeightMm: photoH,
-        gapXMm: prev.config.gapXMm,
-        gapYMm: prev.config.gapYMm,
-        autoOrientation: prev.config.autoOrientation,
-      });
-
-      let assetIdx = 0;
-      for (let i = 0; i < grid.capacityPerPage && assetIdx < newAssets.length; i++) {
-        let slot = curSlots.find((s) => s.slotIndex === i);
-        if (!slot) {
+      if (targetSlotIndex !== undefined) {
+        // Assign first uploaded photo directly to the target slot
+        const firstPhoto = newAssets[0];
+        const existingSlot = curSlots.find((s) => s.slotIndex === targetSlotIndex);
+        if (existingSlot) {
+          existingSlot.photoId = firstPhoto.id;
+        } else {
           curSlots.push({
-            slotIndex: i,
-            photoId: newAssets[assetIdx].id,
+            slotIndex: targetSlotIndex,
+            photoId: firstPhoto.id,
             adjustments: { ...DEFAULT_ADJUSTMENTS },
           });
-          assetIdx++;
-        } else if (!slot.photoId) {
-          slot.photoId = newAssets[assetIdx].id;
-          assetIdx++;
+        }
+
+        // Fill remaining uploaded photos into other empty slots
+        let remainingIdx = 1;
+        for (let i = 0; i < 50 && remainingIdx < newAssets.length; i++) {
+          if (i === targetSlotIndex) continue;
+          let slot = curSlots.find((s) => s.slotIndex === i);
+          if (!slot) {
+            curSlots.push({
+              slotIndex: i,
+              photoId: newAssets[remainingIdx].id,
+              adjustments: { ...DEFAULT_ADJUSTMENTS },
+            });
+            remainingIdx++;
+          } else if (!slot.photoId) {
+            slot.photoId = newAssets[remainingIdx].id;
+            remainingIdx++;
+          }
+        }
+      } else {
+        // Auto-assign to empty slots
+        const paperDim = getPaperDimensions(
+          prev.config.paperId,
+          prev.config.orientation,
+          prev.config.customWidthMm,
+          prev.config.customHeightMm
+        );
+
+        const photoPreset = PHOTO_PRESETS[prev.config.photoPresetId] || PHOTO_PRESETS.print_4x6;
+        const photoW = prev.config.customPhotoWidthMm || photoPreset.widthMm;
+        const photoH = prev.config.customPhotoHeightMm || photoPreset.heightMm;
+
+        const grid = computeUniformGridLayout({
+          sheetWidthMm: paperDim.widthMm,
+          sheetHeightMm: paperDim.heightMm,
+          marginsMm: prev.config.marginsMm,
+          slotWidthMm: photoW,
+          slotHeightMm: photoH,
+          gapXMm: prev.config.gapXMm,
+          gapYMm: prev.config.gapYMm,
+          autoOrientation: prev.config.autoOrientation,
+        });
+
+        let assetIdx = 0;
+        for (let i = 0; i < grid.capacityPerPage && assetIdx < newAssets.length; i++) {
+          let slot = curSlots.find((s) => s.slotIndex === i);
+          if (!slot) {
+            curSlots.push({
+              slotIndex: i,
+              photoId: newAssets[assetIdx].id,
+              adjustments: { ...DEFAULT_ADJUSTMENTS },
+            });
+            assetIdx++;
+          } else if (!slot.photoId) {
+            slot.photoId = newAssets[assetIdx].id;
+            assetIdx++;
+          }
         }
       }
 
@@ -219,9 +292,41 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         ...prev,
         photos: updatedPhotos,
         pages: updatedPages,
+        selectedSlotIndex: targetSlotIndex !== undefined ? targetSlotIndex : prev.selectedSlotIndex,
+        activePanelTab: 'inspector',
         canUndo: true,
         canRedo: false,
         announcement: `${newAssets.length} photo(s) added.`,
+      };
+    });
+  }, [recordHistory]);
+
+  const loadSamplePhotos = useCallback(() => {
+    setState((prev) => {
+      recordHistory(prev);
+      const updatedPhotos = [...SAMPLE_PHOTOS];
+      const curPage = { ...prev.pages[0] };
+      const curSlots: PageSlotAssignment[] = [];
+
+      for (let i = 0; i < 4; i++) {
+        curSlots.push({
+          slotIndex: i,
+          photoId: updatedPhotos[i % updatedPhotos.length].id,
+          adjustments: { ...DEFAULT_ADJUSTMENTS },
+        });
+      }
+      curPage.slots = curSlots;
+
+      return {
+        ...prev,
+        photos: updatedPhotos,
+        pages: [curPage, ...prev.pages.slice(1)],
+        currentPageIndex: 0,
+        selectedSlotIndex: 0,
+        activePanelTab: 'inspector',
+        canUndo: true,
+        canRedo: false,
+        announcement: 'Sample photos loaded.',
       };
     });
   }, [recordHistory]);
@@ -273,6 +378,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         ...prev,
         pages: updatedPages,
         selectedSlotIndex: slotIndex,
+        activePanelTab: 'inspector',
         canUndo: true,
         canRedo: false,
       };
@@ -335,6 +441,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         gapXMm: prev.config.gapXMm,
         gapYMm: prev.config.gapYMm,
         autoOrientation: prev.config.autoOrientation,
+        allowAutoRotate: photoPreset.allowAutoRotate !== false,
       });
 
       const newSlots: PageSlotAssignment[] = [];
@@ -355,7 +462,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         pages: updatedPages,
         canUndo: true,
         canRedo: false,
-        announcement: `Page filled with selected photo (${grid.capacityPerPage} slots).`,
+        announcement: `Page filled with photo (${grid.capacityPerPage} slots).`,
       };
     });
   }, [recordHistory]);
@@ -386,6 +493,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         gapXMm: prev.config.gapXMm,
         gapYMm: prev.config.gapYMm,
         autoOrientation: prev.config.autoOrientation,
+        allowAutoRotate: photoPreset.allowAutoRotate !== false,
       });
 
       const capacity = Math.max(1, grid.capacityPerPage);
@@ -512,6 +620,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       recordHistory(prev);
       return {
         ...INITIAL_STATE,
+        photos: [...SAMPLE_PHOTOS],
         canUndo: true,
         canRedo: false,
       };
@@ -580,8 +689,11 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         setUnit,
         setZoomScale,
         setSelectedSlotIndex,
+        setActivePanelTab,
+        setShowCutMarksOnCanvas,
         setIsCropModalOpen,
         addUploadedPhotos,
+        loadSamplePhotos,
         removePhoto,
         assignPhotoToSlot,
         updateSlotAdjustments,

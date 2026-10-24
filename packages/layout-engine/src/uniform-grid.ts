@@ -14,6 +14,7 @@ export interface GridConfig {
   gapXMm: number;
   gapYMm: number;
   autoOrientation?: boolean;
+  allowAutoRotate?: boolean;
 }
 
 export interface GridSlot {
@@ -53,6 +54,7 @@ export function computeUniformGridLayout(config: GridConfig): UniformGridLayoutR
     gapXMm,
     gapYMm,
     autoOrientation = false,
+    allowAutoRotate = true,
   } = config;
 
   const printableW = Math.max(0, sheetWidthMm - marginsMm.left - marginsMm.right);
@@ -82,7 +84,7 @@ export function computeUniformGridLayout(config: GridConfig): UniformGridLayoutR
   let finalW = slotWidthMm;
   let finalH = slotHeightMm;
 
-  if (autoOrientation && rotatedFit.capacity > normalFit.capacity) {
+  if (autoOrientation && allowAutoRotate && rotatedFit.capacity > normalFit.capacity) {
     useRotated = true;
     finalCols = rotatedFit.cols;
     finalRows = rotatedFit.rows;

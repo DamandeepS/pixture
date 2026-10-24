@@ -7,10 +7,11 @@ export interface PhotoPreset {
   aspectRatio: number;
   description?: string;
   hasPolaroidBorder?: boolean;
+  allowAutoRotate?: boolean;
 }
 
 export const PHOTO_PRESETS: Record<string, PhotoPreset> = {
-  // ID / Passport Presets
+  // ID / Passport Presets - always strict orientation
   passport_us: {
     id: 'passport_us',
     name: 'US Passport / Visa (2 × 2 in)',
@@ -19,6 +20,7 @@ export const PHOTO_PRESETS: Record<string, PhotoPreset> = {
     heightMm: 50.8,
     aspectRatio: 1,
     description: 'Official US 2x2 inch passport/visa standard',
+    allowAutoRotate: false,
   },
   passport_uk_eu: {
     id: 'passport_uk_eu',
@@ -28,6 +30,7 @@ export const PHOTO_PRESETS: Record<string, PhotoPreset> = {
     heightMm: 45.0,
     aspectRatio: 35 / 45,
     description: 'European standard biometric passport photo',
+    allowAutoRotate: false,
   },
   passport_in: {
     id: 'passport_in',
@@ -37,6 +40,7 @@ export const PHOTO_PRESETS: Record<string, PhotoPreset> = {
     heightMm: 45.0,
     aspectRatio: 35 / 45,
     description: 'Standard Indian Passport & Visa dimension',
+    allowAutoRotate: false,
   },
   passport_30x40: {
     id: 'passport_30x40',
@@ -46,6 +50,7 @@ export const PHOTO_PRESETS: Record<string, PhotoPreset> = {
     heightMm: 40.0,
     aspectRatio: 30 / 40,
     description: 'Driver license & employee badge size',
+    allowAutoRotate: false,
   },
   stamp_size: {
     id: 'stamp_size',
@@ -55,6 +60,7 @@ export const PHOTO_PRESETS: Record<string, PhotoPreset> = {
     heightMm: 25.0,
     aspectRatio: 20 / 25,
     description: 'Small stamp size for application forms',
+    allowAutoRotate: false,
   },
 
   // Standard Photo Prints

@@ -13,6 +13,8 @@ export interface ProjectState {
   pages: SheetPage[];
   currentPageIndex: number;
   selectedSlotIndex: number | null;
+  activePanelTab: 'sheet' | 'cutmarks' | 'inspector';
+  showCutMarksOnCanvas: boolean;
   activeUnit: Unit;
   zoomScale: number;
   isCropModalOpen: boolean;
@@ -34,6 +36,8 @@ export const INITIAL_STATE: ProjectState = {
   ],
   currentPageIndex: 0,
   selectedSlotIndex: null,
+  activePanelTab: 'sheet',
+  showCutMarksOnCanvas: true,
   activeUnit: 'mm',
   zoomScale: 1.0,
   isCropModalOpen: false,

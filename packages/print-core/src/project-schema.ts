@@ -72,9 +72,9 @@ export const DEFAULT_SHEET_CONFIG: SheetConfig = {
   gapXMm: 4,
   gapYMm: 4,
   layoutMode: 'uniform',
-  autoOrientation: true,
+  autoOrientation: false,
   cutMarkStyle: 'corners',
-  cutMarkColor: '#202124',
+  cutMarkColor: '#5f6368',
   bleedMm: 0,
 };
 
