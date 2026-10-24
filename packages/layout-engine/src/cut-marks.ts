@@ -27,13 +27,7 @@ export interface CutMarksResult {
 }
 
 export function generateCutMarks(config: CutMarksConfig): CutMarksResult {
-  const {
-    slots,
-    style,
-    markLengthMm = 3.0,
-    markOffsetMm = 1.0,
-    bleedMm = 0,
-  } = config;
+  const { slots, style, markLengthMm = 3.0, markOffsetMm = 1.0, bleedMm = 0 } = config;
 
   if (style === 'none' || slots.length === 0) {
     return { lines: [], bleedBoxes: [] };

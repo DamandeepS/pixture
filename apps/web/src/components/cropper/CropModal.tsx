@@ -11,7 +11,11 @@ import {
 } from 'lucide-react';
 import { useProject } from '../../state/ProjectContext.js';
 import { useI18n } from '@pixture/i18n';
-import { PhotoSlotAdjustment, DEFAULT_ADJUSTMENTS, buildCssFilterString } from '@pixture/print-core';
+import {
+  PhotoSlotAdjustment,
+  DEFAULT_ADJUSTMENTS,
+  buildCssFilterString,
+} from '@pixture/print-core';
 import { PHOTO_PRESETS } from '@pixture/layout-engine';
 
 export function CropModal() {
@@ -30,9 +34,10 @@ export function CropModal() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentPage = pages[currentPageIndex] || pages[0];
-  const selectedAssignment = selectedSlotIndex !== null
-    ? currentPage?.slots.find((s) => s.slotIndex === selectedSlotIndex)
-    : null;
+  const selectedAssignment =
+    selectedSlotIndex !== null
+      ? currentPage?.slots.find((s) => s.slotIndex === selectedSlotIndex)
+      : null;
   const photo = selectedAssignment?.photoId
     ? photos.find((p) => p.id === selectedAssignment.photoId)
     : null;
@@ -40,6 +45,7 @@ export function CropModal() {
   // Local adjustments state
   const [localAdj, setLocalAdj] = useState<PhotoSlotAdjustment>(DEFAULT_ADJUSTMENTS);
   const [isDragging, setIsDragging] = useState(false);
+  const [prevSlotKey, setPrevSlotKey] = useState<string | null>(null);
   const dragStartRef = useRef<{ x: number; y: number; initCropX: number; initCropY: number }>({
     x: 0,
     y: 0,
@@ -47,12 +53,14 @@ export function CropModal() {
     initCropY: 0.5,
   });
 
-  // Whenever the modal opens or selected slot changes, initialize localAdj
-  useEffect(() => {
-    if (isCropModalOpen && selectedAssignment?.adjustments) {
+  // Synchronize local adjustments during render when modal opens or slot changes
+  const currentSlotKey = isCropModalOpen ? `${selectedSlotIndex}-${photo?.id}` : null;
+  if (currentSlotKey !== prevSlotKey) {
+    setPrevSlotKey(currentSlotKey);
+    if (selectedAssignment?.adjustments) {
       setLocalAdj({ ...selectedAssignment.adjustments });
     }
-  }, [isCropModalOpen, selectedAssignment]);
+  }
 
   // Handle ESC key to close
   useEffect(() => {
@@ -123,24 +131,29 @@ export function CropModal() {
   const boxW = slotAspect >= 1 ? 340 : 340 * slotAspect;
   const boxH = slotAspect >= 1 ? 340 / slotAspect : 340;
   const rotScale = isRotated90
-    ? (localAdj.fitMode === 'contain'
-        ? Math.min(boxW / boxH, boxH / boxW)
-        : Math.max(boxW / boxH, boxH / boxW))
+    ? localAdj.fitMode === 'contain'
+      ? Math.min(boxW / boxH, boxH / boxW)
+      : Math.max(boxW / boxH, boxH / boxW)
     : 1;
   const effectiveZoom = localAdj.zoom * rotScale;
 
   return (
-    <div
-      role="dialog"
+    <dialog
+      open
       aria-modal="true"
       aria-labelledby="crop-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm select-none animate-in fade-in duration-150"
-      onClick={handleClose}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent w-full h-full max-w-none max-h-none m-0 border-none select-none animate-in fade-in duration-150"
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="rounded-md-2xl shadow-2xl bg-md-surface p-0 w-full max-w-3xl overflow-hidden text-md-on-surface border border-md-outline-variant flex flex-col max-h-[90vh]"
-      >
+      {/* Backdrop overlay */}
+      <button
+        type="button"
+        onClick={handleClose}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-default"
+        aria-label="Close modal"
+        tabIndex={-1}
+      />
+
+      <div className="relative rounded-md-2xl shadow-2xl bg-md-surface p-0 w-full max-w-3xl overflow-hidden text-md-on-surface border border-md-outline-variant flex flex-col max-h-[90vh] z-10">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-md-outline-variant shrink-0">
           <div className="flex items-center gap-2">
@@ -165,6 +178,9 @@ export function CropModal() {
             {/* Framed Crop Box with matching slot aspect ratio */}
             <div
               ref={containerRef}
+              role="region"
+              aria-label="Crop interactive viewport"
+              tabIndex={0}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
@@ -184,8 +200,14 @@ export function CropModal() {
                 draggable={false}
                 className="max-w-none pointer-events-none select-none transition-transform"
                 style={{
-                  width: localAdj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
-                  height: localAdj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
+                  width:
+                    localAdj.fitMode === 'contain' && !isRotated90
+                      ? '100%'
+                      : `${100 * effectiveZoom}%`,
+                  height:
+                    localAdj.fitMode === 'contain' && !isRotated90
+                      ? '100%'
+                      : `${100 * effectiveZoom}%`,
                   objectFit: localAdj.fitMode === 'contain' ? 'contain' : 'cover',
                   objectPosition: `${localAdj.cropX * 100}% ${localAdj.cropY * 100}%`,
                   transform: `rotate(${localAdj.rotation}deg) scale(${localAdj.flipH ? -1 : 1}, ${localAdj.flipV ? -1 : 1})`,
@@ -232,7 +254,9 @@ export function CropModal() {
                   max="3.5"
                   step="0.05"
                   value={localAdj.zoom}
-                  onChange={(e) => setLocalAdj((prev) => ({ ...prev, zoom: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setLocalAdj((prev) => ({ ...prev, zoom: Number(e.target.value) }))
+                  }
                   className="w-full accent-md-primary"
                 />
               </div>
@@ -241,7 +265,9 @@ export function CropModal() {
               <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setLocalAdj((prev) => ({ ...prev, rotation: (prev.rotation + 90) % 360 }))}
+                  onClick={() =>
+                    setLocalAdj((prev) => ({ ...prev, rotation: (prev.rotation + 90) % 360 }))
+                  }
                   className="flex flex-col items-center justify-center p-2 rounded-md-md border border-md-outline-variant hover:bg-md-surface-container transition-colors"
                   title={t('rotate90')}
                 >
@@ -291,7 +317,9 @@ export function CropModal() {
                     min="-50"
                     max="50"
                     value={localAdj.brightness}
-                    onChange={(e) => setLocalAdj((prev) => ({ ...prev, brightness: Number(e.target.value) }))}
+                    onChange={(e) =>
+                      setLocalAdj((prev) => ({ ...prev, brightness: Number(e.target.value) }))
+                    }
                     className="w-full accent-md-primary"
                   />
                 </div>
@@ -307,7 +335,9 @@ export function CropModal() {
                     min="-50"
                     max="50"
                     value={localAdj.contrast}
-                    onChange={(e) => setLocalAdj((prev) => ({ ...prev, contrast: Number(e.target.value) }))}
+                    onChange={(e) =>
+                      setLocalAdj((prev) => ({ ...prev, contrast: Number(e.target.value) }))
+                    }
                     className="w-full accent-md-primary"
                   />
                 </div>
@@ -323,20 +353,22 @@ export function CropModal() {
                     min="-50"
                     max="50"
                     value={localAdj.saturation}
-                    onChange={(e) => setLocalAdj((prev) => ({ ...prev, saturation: Number(e.target.value) }))}
+                    onChange={(e) =>
+                      setLocalAdj((prev) => ({ ...prev, saturation: Number(e.target.value) }))
+                    }
                     className="w-full accent-md-primary"
                   />
                 </div>
 
                 {/* Grayscale */}
                 <label className="flex items-center justify-between cursor-pointer pt-1">
-                  <span className="font-medium text-xs text-md-on-surface">
-                    {t('grayscale')}
-                  </span>
+                  <span className="font-medium text-xs text-md-on-surface">{t('grayscale')}</span>
                   <input
                     type="checkbox"
                     checked={localAdj.grayscale}
-                    onChange={(e) => setLocalAdj((prev) => ({ ...prev, grayscale: e.target.checked }))}
+                    onChange={(e) =>
+                      setLocalAdj((prev) => ({ ...prev, grayscale: e.target.checked }))
+                    }
                     className="w-4 h-4 rounded text-md-primary focus:ring-md-primary"
                   />
                 </label>
@@ -379,6 +411,6 @@ export function CropModal() {
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

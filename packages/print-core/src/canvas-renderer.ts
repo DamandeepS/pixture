@@ -4,11 +4,7 @@ import {
   getPaperDimensions,
   CutMarkStyle,
 } from '@pixture/layout-engine';
-import {
-  SheetConfig,
-  PhotoAsset,
-  SheetPage,
-} from './project-schema.js';
+import { SheetConfig, PhotoAsset, SheetPage } from './project-schema.js';
 import { drawPhotoToContext, loadImage } from './image-filters.js';
 
 export interface RenderSheetOptions {
@@ -88,16 +84,7 @@ export async function renderSheetToCanvas(options: RenderSheetOptions): Promise<
     if (assignment && assignment.photoId) {
       const img = loadedImages.get(assignment.photoId);
       if (img) {
-        drawPhotoToContext(
-          ctx,
-          img,
-          assignment.adjustments,
-          slotX,
-          slotY,
-          slotW,
-          slotH,
-          pxPerMm
-        );
+        drawPhotoToContext(ctx, img, assignment.adjustments, slotX, slotY, slotW, slotH, pxPerMm);
       }
     }
   }

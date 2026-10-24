@@ -47,7 +47,11 @@ export function pixelsToMm(px: number, dpi: number = 300): number {
 /**
  * Formats a measurement with localized unit abbreviation
  */
-export function formatMeasurement(valueInMm: number, targetUnit: Unit, precision: number = 1): string {
+export function formatMeasurement(
+  valueInMm: number,
+  targetUnit: Unit,
+  precision: number = 1
+): string {
   const converted = convertUnits(valueInMm, 'mm', targetUnit);
   const rounded = Number(converted.toFixed(precision));
   return `${rounded} ${targetUnit}`;

@@ -22,10 +22,7 @@ import {
   downloadPdf,
   renderSheetToCanvas,
 } from '@pixture/print-core';
-import {
-  getPaperDimensions,
-  computeSheetSlotsGeometry,
-} from '@pixture/layout-engine';
+import { getPaperDimensions, computeSheetSlotsGeometry } from '@pixture/layout-engine';
 
 export function AppBar() {
   const {
@@ -306,7 +303,7 @@ export function AppBar() {
           accept=".pixture,application/json"
           onChange={handleImportFile}
           className="hidden"
-          aria-hidden="true"
+          tabIndex={-1}
         />
 
         <div className="h-5 w-[1px] bg-md-outline-variant mx-1"></div>
@@ -343,10 +340,7 @@ export function AppBar() {
       </div>
 
       {/* Accessible In-App Legal & Privacy Modal */}
-      <LegalModal
-        isOpen={isLegalModalOpen}
-        onClose={() => setIsLegalModalOpen(false)}
-      />
+      <LegalModal isOpen={isLegalModalOpen} onClose={() => setIsLegalModalOpen(false)} />
     </header>
   );
 }

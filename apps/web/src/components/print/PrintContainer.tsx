@@ -57,19 +57,20 @@ export function PrintContainer() {
     <div>
       {pages.map((page) => {
         // Only generate cut marks for slots on this page that actually have a photo assigned
-        const filledSlots = slotsGeometry.filter(
-          (slotGeom) => page.slots.some((s) => s.slotIndex === slotGeom.index && s.photoId)
+        const filledSlots = slotsGeometry.filter((slotGeom) =>
+          page.slots.some((s) => s.slotIndex === slotGeom.index && s.photoId)
         );
 
-        const pageCutMarks = filledSlots.length > 0 && config.cutMarkStyle !== 'none'
-          ? generateCutMarks({
-              slots: filledSlots,
-              style: config.cutMarkStyle as CutMarkStyle,
-              bleedMm: config.bleedMm,
-              markLengthMm: 2.0,
-              markOffsetMm: 0.5,
-            })
-          : null;
+        const pageCutMarks =
+          filledSlots.length > 0 && config.cutMarkStyle !== 'none'
+            ? generateCutMarks({
+                slots: filledSlots,
+                style: config.cutMarkStyle as CutMarkStyle,
+                bleedMm: config.bleedMm,
+                markLengthMm: 2.0,
+                markOffsetMm: 0.5,
+              })
+            : null;
 
         return (
           <div
@@ -105,73 +106,83 @@ export function PrintContainer() {
               </svg>
             )}
 
-          {/* Slots & Photos */}
-          {slotsGeometry.map((slotGeom) => {
-            const assignment = page.slots.find((s) => s.slotIndex === slotGeom.index);
-            const photo = assignment?.photoId ? photoMap.get(assignment.photoId) : null;
-            const adj = assignment?.adjustments;
+            {/* Slots & Photos */}
+            {slotsGeometry.map((slotGeom) => {
+              const assignment = page.slots.find((s) => s.slotIndex === slotGeom.index);
+              const photo = assignment?.photoId ? photoMap.get(assignment.photoId) : null;
+              const adj = assignment?.adjustments;
 
-            if (!photo || !adj) return null;
+              if (!photo || !adj) return null;
 
-            const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
-            const rotScale = isRotated90
-              ? (adj.fitMode === 'contain'
-                  ? Math.min(slotGeom.widthMm / slotGeom.heightMm, slotGeom.heightMm / slotGeom.widthMm)
-                  : Math.max(slotGeom.widthMm / slotGeom.heightMm, slotGeom.heightMm / slotGeom.widthMm))
-              : 1;
-            const effectiveZoom = adj.zoom * rotScale;
-            const bleed = config.bleedMm || 0;
+              const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
+              const rotScale = isRotated90
+                ? adj.fitMode === 'contain'
+                  ? Math.min(
+                      slotGeom.widthMm / slotGeom.heightMm,
+                      slotGeom.heightMm / slotGeom.widthMm
+                    )
+                  : Math.max(
+                      slotGeom.widthMm / slotGeom.heightMm,
+                      slotGeom.heightMm / slotGeom.widthMm
+                    )
+                : 1;
+              const effectiveZoom = adj.zoom * rotScale;
+              const bleed = config.bleedMm || 0;
 
-            return (
-              <div
-                key={slotGeom.index}
-                className="absolute overflow-hidden flex items-center justify-center bg-white"
-                style={{
-                  left: `${slotGeom.xMm - bleed}mm`,
-                  top: `${slotGeom.yMm - bleed}mm`,
-                  width: `${slotGeom.widthMm + bleed * 2}mm`,
-                  height: `${slotGeom.heightMm + bleed * 2}mm`,
-                }}
-              >
+              return (
                 <div
-                  className="relative overflow-hidden w-full h-full flex items-center justify-center bg-white"
+                  key={slotGeom.index}
+                  className="absolute overflow-hidden flex items-center justify-center bg-white"
                   style={{
-                    padding: adj.isPolaroid
-                      ? '5mm 5mm 20mm 5mm'
-                      : adj.hasWhiteBorder
-                        ? `${adj.whiteBorderWidthMm}mm`
-                        : 0,
+                    left: `${slotGeom.xMm - bleed}mm`,
+                    top: `${slotGeom.yMm - bleed}mm`,
+                    width: `${slotGeom.widthMm + bleed * 2}mm`,
+                    height: `${slotGeom.heightMm + bleed * 2}mm`,
                   }}
                 >
-                  <img
-                    src={photo.dataUrl}
-                    alt={photo.name}
-                    className="max-w-none select-none"
+                  <div
+                    className="relative overflow-hidden w-full h-full flex items-center justify-center bg-white"
                     style={{
-                      width: adj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
-                      height: adj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
-                      objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
-                      objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
-                      transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
-                      filter: buildCssFilterString(adj),
+                      padding: adj.isPolaroid
+                        ? '5mm 5mm 20mm 5mm'
+                        : adj.hasWhiteBorder
+                          ? `${adj.whiteBorderWidthMm}mm`
+                          : 0,
                     }}
-                  />
+                  >
+                    <img
+                      src={photo.dataUrl}
+                      alt={photo.name}
+                      className="max-w-none select-none"
+                      style={{
+                        width:
+                          adj.fitMode === 'contain' && !isRotated90
+                            ? '100%'
+                            : `${100 * effectiveZoom}%`,
+                        height:
+                          adj.fitMode === 'contain' && !isRotated90
+                            ? '100%'
+                            : `${100 * effectiveZoom}%`,
+                        objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
+                        objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
+                        transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
+                        filter: buildCssFilterString(adj),
+                      }}
+                    />
 
-                  {adj.isPolaroid && adj.polaroidCaption && (
-                    <div
-                      className="absolute bottom-1 w-full text-center font-caveat text-black truncate px-1 text-[12pt]"
-                    >
-                      {adj.polaroidCaption}
-                    </div>
-                  )}
+                    {adj.isPolaroid && adj.polaroidCaption && (
+                      <div className="absolute bottom-1 w-full text-center font-caveat text-black truncate px-1 text-[12pt]">
+                        {adj.polaroidCaption}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      );
-    })}
-  </div>,
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>,
     printRoot
   );
 }

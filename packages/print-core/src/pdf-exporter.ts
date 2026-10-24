@@ -1,9 +1,5 @@
 import { PDFDocument, rgb } from 'pdf-lib';
-import {
-  getPaperDimensions,
-  generateCutMarks,
-  CutMarkStyle,
-} from '@pixture/layout-engine';
+import { getPaperDimensions, generateCutMarks, CutMarkStyle } from '@pixture/layout-engine';
 import { SheetConfig, SheetPage, PhotoAsset } from './project-schema.js';
 import { renderSheetToCanvas } from './canvas-renderer.js';
 

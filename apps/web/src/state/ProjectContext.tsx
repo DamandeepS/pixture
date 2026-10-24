@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+  useRef,
+} from 'react';
 import { get, set } from 'idb-keyval';
 import {
   SheetConfig,
@@ -131,17 +139,20 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, projectName: name }));
   }, []);
 
-  const updateConfig = useCallback((patch: Partial<SheetConfig>) => {
-    setState((prev) => {
-      recordHistory(prev);
-      return {
-        ...prev,
-        config: { ...prev.config, ...patch },
-        canUndo: true,
-        canRedo: false,
-      };
-    });
-  }, [recordHistory]);
+  const updateConfig = useCallback(
+    (patch: Partial<SheetConfig>) => {
+      setState((prev) => {
+        recordHistory(prev);
+        return {
+          ...prev,
+          config: { ...prev.config, ...patch },
+          canUndo: true,
+          canRedo: false,
+        };
+      });
+    },
+    [recordHistory]
+  );
 
   const setUnit = useCallback((unit: Unit) => {
     setState((prev) => ({ ...prev, activeUnit: unit }));
@@ -166,146 +177,154 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setState((prev) => ({ ...prev, activePanelTab: tab }));
   }, []);
 
-  const setShowCutMarksOnCanvas = useCallback((showOrFn: boolean | ((prev: boolean) => boolean)) => {
-    setState((prev) => ({
-      ...prev,
-      showCutMarksOnCanvas: typeof showOrFn === 'function' ? showOrFn(prev.showCutMarksOnCanvas) : showOrFn,
-    }));
-  }, []);
+  const setShowCutMarksOnCanvas = useCallback(
+    (showOrFn: boolean | ((prev: boolean) => boolean)) => {
+      setState((prev) => ({
+        ...prev,
+        showCutMarksOnCanvas:
+          typeof showOrFn === 'function' ? showOrFn(prev.showCutMarksOnCanvas) : showOrFn,
+      }));
+    },
+    []
+  );
 
   const setIsCropModalOpen = useCallback((open: boolean) => {
     setState((prev) => ({ ...prev, isCropModalOpen: open }));
   }, []);
 
-  const addUploadedPhotos = useCallback(async (files: File[], targetSlotIndex?: number) => {
-    const newAssets: PhotoAsset[] = [];
+  const addUploadedPhotos = useCallback(
+    async (files: File[], targetSlotIndex?: number) => {
+      const newAssets: PhotoAsset[] = [];
 
-    for (const file of files) {
-      if (!file.type.startsWith('image/')) continue;
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
 
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const { w, h } = await new Promise<{ w: number; h: number }>((resolve) => {
-        const img = new Image();
-        img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-        img.onerror = () => resolve({ w: 800, h: 600 });
-        img.src = dataUrl;
-      });
-
-      newAssets.push({
-        id: 'photo_' + Math.random().toString(36).slice(2, 10),
-        name: file.name,
-        dataUrl,
-        width: w,
-        height: h,
-        type: file.type,
-        sizeBytes: file.size,
-      });
-    }
-
-    if (newAssets.length === 0) return;
-
-    setState((prev) => {
-      recordHistory(prev);
-
-      const updatedPhotos = [...prev.photos, ...newAssets];
-      let updatedPages = [...prev.pages];
-
-      const curPage = { ...updatedPages[prev.currentPageIndex] };
-      const curSlots = [...curPage.slots];
-
-      if (targetSlotIndex !== undefined) {
-        // Assign first uploaded photo directly to the target slot
-        const firstPhoto = newAssets[0];
-        const existingSlot = curSlots.find((s) => s.slotIndex === targetSlotIndex);
-        if (existingSlot) {
-          existingSlot.photoId = firstPhoto.id;
-        } else {
-          curSlots.push({
-            slotIndex: targetSlotIndex,
-            photoId: firstPhoto.id,
-            adjustments: { ...DEFAULT_ADJUSTMENTS },
-          });
-        }
-
-        // Fill remaining uploaded photos into other empty slots
-        let remainingIdx = 1;
-        for (let i = 0; i < 50 && remainingIdx < newAssets.length; i++) {
-          if (i === targetSlotIndex) continue;
-          let slot = curSlots.find((s) => s.slotIndex === i);
-          if (!slot) {
-            curSlots.push({
-              slotIndex: i,
-              photoId: newAssets[remainingIdx].id,
-              adjustments: { ...DEFAULT_ADJUSTMENTS },
-            });
-            remainingIdx++;
-          } else if (!slot.photoId) {
-            slot.photoId = newAssets[remainingIdx].id;
-            remainingIdx++;
-          }
-        }
-      } else {
-        // Auto-assign to empty slots
-        const paperDim = getPaperDimensions(
-          prev.config.paperId,
-          prev.config.orientation,
-          prev.config.customWidthMm,
-          prev.config.customHeightMm
-        );
-
-        const photoPreset = PHOTO_PRESETS[prev.config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-        const photoW = prev.config.customPhotoWidthMm || photoPreset.widthMm;
-        const photoH = prev.config.customPhotoHeightMm || photoPreset.heightMm;
-
-        const grid = computeUniformGridLayout({
-          sheetWidthMm: paperDim.widthMm,
-          sheetHeightMm: paperDim.heightMm,
-          marginsMm: prev.config.marginsMm,
-          slotWidthMm: photoW,
-          slotHeightMm: photoH,
-          gapXMm: prev.config.gapXMm,
-          gapYMm: prev.config.gapYMm,
-          autoOrientation: prev.config.autoOrientation,
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
         });
 
-        let assetIdx = 0;
-        for (let i = 0; i < grid.capacityPerPage && assetIdx < newAssets.length; i++) {
-          let slot = curSlots.find((s) => s.slotIndex === i);
-          if (!slot) {
-            curSlots.push({
-              slotIndex: i,
-              photoId: newAssets[assetIdx].id,
-              adjustments: { ...DEFAULT_ADJUSTMENTS },
-            });
-            assetIdx++;
-          } else if (!slot.photoId) {
-            slot.photoId = newAssets[assetIdx].id;
-            assetIdx++;
-          }
-        }
+        const { w, h } = await new Promise<{ w: number; h: number }>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+          img.onerror = () => resolve({ w: 800, h: 600 });
+          img.src = dataUrl;
+        });
+
+        newAssets.push({
+          id: 'photo_' + Math.random().toString(36).slice(2, 10),
+          name: file.name,
+          dataUrl,
+          width: w,
+          height: h,
+          type: file.type,
+          sizeBytes: file.size,
+        });
       }
 
-      curPage.slots = curSlots;
-      updatedPages[prev.currentPageIndex] = curPage;
+      if (newAssets.length === 0) return;
 
-      return {
-        ...prev,
-        photos: updatedPhotos,
-        pages: updatedPages,
-        selectedSlotIndex: targetSlotIndex !== undefined ? targetSlotIndex : prev.selectedSlotIndex,
-        activePanelTab: 'inspector',
-        canUndo: true,
-        canRedo: false,
-        announcement: `${newAssets.length} photo(s) added.`,
-      };
-    });
-  }, [recordHistory]);
+      setState((prev) => {
+        recordHistory(prev);
+
+        const updatedPhotos = [...prev.photos, ...newAssets];
+        let updatedPages = [...prev.pages];
+
+        const curPage = { ...updatedPages[prev.currentPageIndex] };
+        const curSlots = [...curPage.slots];
+
+        if (targetSlotIndex !== undefined) {
+          // Assign first uploaded photo directly to the target slot
+          const firstPhoto = newAssets[0];
+          const existingSlot = curSlots.find((s) => s.slotIndex === targetSlotIndex);
+          if (existingSlot) {
+            existingSlot.photoId = firstPhoto.id;
+          } else {
+            curSlots.push({
+              slotIndex: targetSlotIndex,
+              photoId: firstPhoto.id,
+              adjustments: { ...DEFAULT_ADJUSTMENTS },
+            });
+          }
+
+          // Fill remaining uploaded photos into other empty slots
+          let remainingIdx = 1;
+          for (let i = 0; i < 50 && remainingIdx < newAssets.length; i++) {
+            if (i === targetSlotIndex) continue;
+            let slot = curSlots.find((s) => s.slotIndex === i);
+            if (!slot) {
+              curSlots.push({
+                slotIndex: i,
+                photoId: newAssets[remainingIdx].id,
+                adjustments: { ...DEFAULT_ADJUSTMENTS },
+              });
+              remainingIdx++;
+            } else if (!slot.photoId) {
+              slot.photoId = newAssets[remainingIdx].id;
+              remainingIdx++;
+            }
+          }
+        } else {
+          // Auto-assign to empty slots
+          const paperDim = getPaperDimensions(
+            prev.config.paperId,
+            prev.config.orientation,
+            prev.config.customWidthMm,
+            prev.config.customHeightMm
+          );
+
+          const photoPreset = PHOTO_PRESETS[prev.config.photoPresetId] || PHOTO_PRESETS.print_4x6;
+          const photoW = prev.config.customPhotoWidthMm || photoPreset.widthMm;
+          const photoH = prev.config.customPhotoHeightMm || photoPreset.heightMm;
+
+          const grid = computeUniformGridLayout({
+            sheetWidthMm: paperDim.widthMm,
+            sheetHeightMm: paperDim.heightMm,
+            marginsMm: prev.config.marginsMm,
+            slotWidthMm: photoW,
+            slotHeightMm: photoH,
+            gapXMm: prev.config.gapXMm,
+            gapYMm: prev.config.gapYMm,
+            autoOrientation: prev.config.autoOrientation,
+          });
+
+          let assetIdx = 0;
+          for (let i = 0; i < grid.capacityPerPage && assetIdx < newAssets.length; i++) {
+            let slot = curSlots.find((s) => s.slotIndex === i);
+            if (!slot) {
+              curSlots.push({
+                slotIndex: i,
+                photoId: newAssets[assetIdx].id,
+                adjustments: { ...DEFAULT_ADJUSTMENTS },
+              });
+              assetIdx++;
+            } else if (!slot.photoId) {
+              slot.photoId = newAssets[assetIdx].id;
+              assetIdx++;
+            }
+          }
+        }
+
+        curPage.slots = curSlots;
+        updatedPages[prev.currentPageIndex] = curPage;
+
+        return {
+          ...prev,
+          photos: updatedPhotos,
+          pages: updatedPages,
+          selectedSlotIndex:
+            targetSlotIndex !== undefined ? targetSlotIndex : prev.selectedSlotIndex,
+          activePanelTab: 'inspector',
+          canUndo: true,
+          canRedo: false,
+          announcement: `${newAssets.length} photo(s) added.`,
+        };
+      });
+    },
+    [recordHistory]
+  );
 
   const loadSamplePhotos = useCallback(() => {
     setState((prev) => {
@@ -337,141 +356,153 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     });
   }, [recordHistory]);
 
-  const removePhoto = useCallback((photoId: string) => {
-    setState((prev) => {
-      recordHistory(prev);
-      const updatedPhotos = prev.photos.filter((p) => p.id !== photoId);
-      const updatedPages = prev.pages.map((page) => ({
-        ...page,
-        slots: page.slots.map((slot) =>
-          slot.photoId === photoId ? { ...slot, photoId: null } : slot
-        ),
-      }));
-      return {
-        ...prev,
-        photos: updatedPhotos,
-        pages: updatedPages,
-        canUndo: true,
-        canRedo: false,
-      };
-    });
-  }, [recordHistory]);
-
-  const assignPhotoToSlot = useCallback((slotIndex: number, photoId: string | null) => {
-    setState((prev) => {
-      recordHistory(prev);
-      const curPage = { ...prev.pages[prev.currentPageIndex] };
-      const curSlots = [...curPage.slots];
-      const existingIdx = curSlots.findIndex((s) => s.slotIndex === slotIndex);
-
-      if (existingIdx !== -1) {
-        curSlots[existingIdx] = {
-          ...curSlots[existingIdx],
-          photoId,
+  const removePhoto = useCallback(
+    (photoId: string) => {
+      setState((prev) => {
+        recordHistory(prev);
+        const updatedPhotos = prev.photos.filter((p) => p.id !== photoId);
+        const updatedPages = prev.pages.map((page) => ({
+          ...page,
+          slots: page.slots.map((slot) =>
+            slot.photoId === photoId ? { ...slot, photoId: null } : slot
+          ),
+        }));
+        return {
+          ...prev,
+          photos: updatedPhotos,
+          pages: updatedPages,
+          canUndo: true,
+          canRedo: false,
         };
-      } else {
-        curSlots.push({
-          slotIndex,
-          photoId,
-          adjustments: { ...DEFAULT_ADJUSTMENTS },
-        });
-      }
-
-      const updatedPages = [...prev.pages];
-      updatedPages[prev.currentPageIndex] = { ...curPage, slots: curSlots };
-
-      return {
-        ...prev,
-        pages: updatedPages,
-        selectedSlotIndex: slotIndex,
-        activePanelTab: 'inspector',
-        canUndo: true,
-        canRedo: false,
-      };
-    });
-  }, [recordHistory]);
-
-  const updateSlotAdjustments = useCallback((slotIndex: number, patch: Partial<PhotoSlotAdjustment>) => {
-    setState((prev) => {
-      recordHistory(prev);
-      const curPage = { ...prev.pages[prev.currentPageIndex] };
-      const curSlots = [...curPage.slots];
-      const existingIdx = curSlots.findIndex((s) => s.slotIndex === slotIndex);
-
-      if (existingIdx !== -1) {
-        curSlots[existingIdx] = {
-          ...curSlots[existingIdx],
-          adjustments: { ...curSlots[existingIdx].adjustments, ...patch },
-        };
-      } else {
-        curSlots.push({
-          slotIndex,
-          photoId: null,
-          adjustments: { ...DEFAULT_ADJUSTMENTS, ...patch },
-        });
-      }
-
-      const updatedPages = [...prev.pages];
-      updatedPages[prev.currentPageIndex] = { ...curPage, slots: curSlots };
-
-      return {
-        ...prev,
-        pages: updatedPages,
-        canUndo: true,
-        canRedo: false,
-      };
-    });
-  }, [recordHistory]);
-
-  const fillPageWithPhoto = useCallback((photoId: string) => {
-    setState((prev) => {
-      recordHistory(prev);
-
-      const paperDim = getPaperDimensions(
-        prev.config.paperId,
-        prev.config.orientation,
-        prev.config.customWidthMm,
-        prev.config.customHeightMm
-      );
-
-      const photoPreset = PHOTO_PRESETS[prev.config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-      const photoW = prev.config.customPhotoWidthMm || photoPreset.widthMm;
-      const photoH = prev.config.customPhotoHeightMm || photoPreset.heightMm;
-
-      const grid = computeUniformGridLayout({
-        sheetWidthMm: paperDim.widthMm,
-        sheetHeightMm: paperDim.heightMm,
-        marginsMm: prev.config.marginsMm,
-        slotWidthMm: photoW,
-        slotHeightMm: photoH,
-        gapXMm: prev.config.gapXMm,
-        gapYMm: prev.config.gapYMm,
-        autoOrientation: prev.config.autoOrientation,
-        allowAutoRotate: photoPreset.allowAutoRotate !== false,
       });
+    },
+    [recordHistory]
+  );
 
-      const newSlots: PageSlotAssignment[] = [];
-      for (let i = 0; i < grid.capacityPerPage; i++) {
-        newSlots.push({
-          slotIndex: i,
-          photoId,
-          adjustments: { ...DEFAULT_ADJUSTMENTS },
+  const assignPhotoToSlot = useCallback(
+    (slotIndex: number, photoId: string | null) => {
+      setState((prev) => {
+        recordHistory(prev);
+        const curPage = { ...prev.pages[prev.currentPageIndex] };
+        const curSlots = [...curPage.slots];
+        const existingIdx = curSlots.findIndex((s) => s.slotIndex === slotIndex);
+
+        if (existingIdx !== -1) {
+          curSlots[existingIdx] = {
+            ...curSlots[existingIdx],
+            photoId,
+          };
+        } else {
+          curSlots.push({
+            slotIndex,
+            photoId,
+            adjustments: { ...DEFAULT_ADJUSTMENTS },
+          });
+        }
+
+        const updatedPages = [...prev.pages];
+        updatedPages[prev.currentPageIndex] = { ...curPage, slots: curSlots };
+
+        return {
+          ...prev,
+          pages: updatedPages,
+          selectedSlotIndex: slotIndex,
+          activePanelTab: 'inspector',
+          canUndo: true,
+          canRedo: false,
+        };
+      });
+    },
+    [recordHistory]
+  );
+
+  const updateSlotAdjustments = useCallback(
+    (slotIndex: number, patch: Partial<PhotoSlotAdjustment>) => {
+      setState((prev) => {
+        recordHistory(prev);
+        const curPage = { ...prev.pages[prev.currentPageIndex] };
+        const curSlots = [...curPage.slots];
+        const existingIdx = curSlots.findIndex((s) => s.slotIndex === slotIndex);
+
+        if (existingIdx !== -1) {
+          curSlots[existingIdx] = {
+            ...curSlots[existingIdx],
+            adjustments: { ...curSlots[existingIdx].adjustments, ...patch },
+          };
+        } else {
+          curSlots.push({
+            slotIndex,
+            photoId: null,
+            adjustments: { ...DEFAULT_ADJUSTMENTS, ...patch },
+          });
+        }
+
+        const updatedPages = [...prev.pages];
+        updatedPages[prev.currentPageIndex] = { ...curPage, slots: curSlots };
+
+        return {
+          ...prev,
+          pages: updatedPages,
+          canUndo: true,
+          canRedo: false,
+        };
+      });
+    },
+    [recordHistory]
+  );
+
+  const fillPageWithPhoto = useCallback(
+    (photoId: string) => {
+      setState((prev) => {
+        recordHistory(prev);
+
+        const paperDim = getPaperDimensions(
+          prev.config.paperId,
+          prev.config.orientation,
+          prev.config.customWidthMm,
+          prev.config.customHeightMm
+        );
+
+        const photoPreset = PHOTO_PRESETS[prev.config.photoPresetId] || PHOTO_PRESETS.print_4x6;
+        const photoW = prev.config.customPhotoWidthMm || photoPreset.widthMm;
+        const photoH = prev.config.customPhotoHeightMm || photoPreset.heightMm;
+
+        const grid = computeUniformGridLayout({
+          sheetWidthMm: paperDim.widthMm,
+          sheetHeightMm: paperDim.heightMm,
+          marginsMm: prev.config.marginsMm,
+          slotWidthMm: photoW,
+          slotHeightMm: photoH,
+          gapXMm: prev.config.gapXMm,
+          gapYMm: prev.config.gapYMm,
+          autoOrientation: prev.config.autoOrientation,
+          allowAutoRotate: photoPreset.allowAutoRotate !== false,
         });
-      }
 
-      const curPage = { ...prev.pages[prev.currentPageIndex], slots: newSlots };
-      const updatedPages = [...prev.pages];
-      updatedPages[prev.currentPageIndex] = curPage;
+        const newSlots: PageSlotAssignment[] = [];
+        for (let i = 0; i < grid.capacityPerPage; i++) {
+          newSlots.push({
+            slotIndex: i,
+            photoId,
+            adjustments: { ...DEFAULT_ADJUSTMENTS },
+          });
+        }
 
-      return {
-        ...prev,
-        pages: updatedPages,
-        canUndo: true,
-        canRedo: false,
-        announcement: `Page filled with photo (${grid.capacityPerPage} slots).`,
-      };
-    });
-  }, [recordHistory]);
+        const curPage = { ...prev.pages[prev.currentPageIndex], slots: newSlots };
+        const updatedPages = [...prev.pages];
+        updatedPages[prev.currentPageIndex] = curPage;
+
+        return {
+          ...prev,
+          pages: updatedPages,
+          canUndo: true,
+          canRedo: false,
+          announcement: `Page filled with photo (${grid.capacityPerPage} slots).`,
+        };
+      });
+    },
+    [recordHistory]
+  );
 
   const autoPackAllPhotos = useCallback(() => {
     setState((prev) => {
@@ -660,34 +691,37 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     URL.revokeObjectURL(url);
   }, [state]);
 
-  const importProjectJson = useCallback((jsonString: string): boolean => {
-    try {
-      const parsed = JSON.parse(jsonString) as PixtureProject;
-      if (!parsed.config || !parsed.pages) {
-        throw new Error('Invalid project file format');
-      }
+  const importProjectJson = useCallback(
+    (jsonString: string): boolean => {
+      try {
+        const parsed = JSON.parse(jsonString) as PixtureProject;
+        if (!parsed.config || !parsed.pages) {
+          throw new Error('Invalid project file format');
+        }
 
-      setState((prev) => {
-        recordHistory(prev);
-        return {
-          ...prev,
-          projectName: parsed.projectName || 'Imported Project',
-          config: parsed.config,
-          photos: parsed.photos || [],
-          pages: parsed.pages || [],
-          currentPageIndex: 0,
-          selectedSlotIndex: null,
-          canUndo: true,
-          canRedo: false,
-          announcement: 'Project loaded successfully.',
-        };
-      });
-      return true;
-    } catch (err) {
-      console.error('Failed to import project', err);
-      return false;
-    }
-  }, [recordHistory]);
+        setState((prev) => {
+          recordHistory(prev);
+          return {
+            ...prev,
+            projectName: parsed.projectName || 'Imported Project',
+            config: parsed.config,
+            photos: parsed.photos || [],
+            pages: parsed.pages || [],
+            currentPageIndex: 0,
+            selectedSlotIndex: null,
+            canUndo: true,
+            canRedo: false,
+            announcement: 'Project loaded successfully.',
+          };
+        });
+        return true;
+      } catch (err) {
+        console.error('Failed to import project', err);
+        return false;
+      }
+    },
+    [recordHistory]
+  );
 
   return (
     <ProjectContext.Provider

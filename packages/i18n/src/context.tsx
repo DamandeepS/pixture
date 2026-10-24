@@ -55,7 +55,10 @@ export function I18nProvider({
 
   const t = (key: TranslationKey, params?: Record<string, string | number>): string => {
     const dict = translations[locale] || translations.en;
-    let text: string = (dict as Record<string, string>)[key] || (translations.en as Record<string, string>)[key] || key;
+    let text: string =
+      (dict as Record<string, string>)[key] ||
+      (translations.en as Record<string, string>)[key] ||
+      key;
 
     if (params) {
       for (const [k, v] of Object.entries(params)) {

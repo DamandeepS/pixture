@@ -49,7 +49,9 @@ export interface ComputeSlotsGeometryResult {
   secondaryCountOnCurrentPage: number;
 }
 
-export function computeSheetSlotsGeometry(options: ComputeSlotsGeometryOptions): ComputeSlotsGeometryResult {
+export function computeSheetSlotsGeometry(
+  options: ComputeSlotsGeometryOptions
+): ComputeSlotsGeometryResult {
   const {
     sheetWidthMm,
     sheetHeightMm,
@@ -166,8 +168,12 @@ export function computeSheetSlotsGeometry(options: ComputeSlotsGeometryOptions):
     index: idx,
   }));
 
-  const primaryCountOnCurrentPage = reindexedPageSlots.filter((s) => s.sizeType === 'primary').length;
-  const secondaryCountOnCurrentPage = reindexedPageSlots.filter((s) => s.sizeType === 'secondary').length;
+  const primaryCountOnCurrentPage = reindexedPageSlots.filter(
+    (s) => s.sizeType === 'primary'
+  ).length;
+  const secondaryCountOnCurrentPage = reindexedPageSlots.filter(
+    (s) => s.sizeType === 'secondary'
+  ).length;
 
   return {
     slots: reindexedPageSlots,
@@ -226,7 +232,8 @@ export function calculateMaxSecondaryFit(options: {
     });
 
     const allFitOnPage0 =
-      res.placedItems.length === items.length && res.placedItems.every((item) => item.pageIndex === 0);
+      res.placedItems.length === items.length &&
+      res.placedItems.every((item) => item.pageIndex === 0);
 
     if (allFitOnPage0) {
       bestCount = n;

@@ -1,9 +1,4 @@
-import {
-  SheetConfig,
-  PhotoAsset,
-  SheetPage,
-  DEFAULT_SHEET_CONFIG,
-} from '@pixture/print-core';
+import { SheetConfig, PhotoAsset, SheetPage, DEFAULT_SHEET_CONFIG } from '@pixture/print-core';
 import { Unit } from '@pixture/layout-engine';
 
 export interface ProjectState {

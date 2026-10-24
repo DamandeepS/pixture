@@ -105,7 +105,8 @@ export const translations = {
     openSourceLicense: 'License (MIT)',
     attributions: 'Attributions',
     onDeviceGuarantee: '100% On-Device & Private',
-    onDeviceDescription: 'Your photos never leave your device. Processing occurs entirely in local browser memory with zero cloud uploads or tracking.',
+    onDeviceDescription:
+      'Your photos never leave your device. Processing occurs entirely in local browser memory with zero cloud uploads or tracking.',
     close: 'Close',
   },
   es: {
@@ -196,7 +197,8 @@ export const translations = {
     openSourceLicense: 'Licencia (MIT)',
     attributions: 'Atribuciones',
     onDeviceGuarantee: '100% en el Dispositivo y Privado',
-    onDeviceDescription: 'Tus fotos nunca salen de tu dispositivo. Todo el procesamiento se realiza localmente en el navegador sin cargas a la nube ni rastreo.',
+    onDeviceDescription:
+      'Tus fotos nunca salen de tu dispositivo. Todo el procesamiento se realiza localmente en el navegador sin cargas a la nube ni rastreo.',
     close: 'Cerrar',
   },
   fr: {
@@ -287,7 +289,8 @@ export const translations = {
     openSourceLicense: 'Licence (MIT)',
     attributions: 'Attributions & Remerciements',
     onDeviceGuarantee: '100% Local et Privé',
-    onDeviceDescription: 'Vos photos ne quittent jamais votre appareil. Tout le traitement s’effectue localement dans votre navigateur sans téléversement ni suivi.',
+    onDeviceDescription:
+      'Vos photos ne quittent jamais votre appareil. Tout le traitement s’effectue localement dans votre navigateur sans téléversement ni suivi.',
     close: 'Fermer',
   },
   de: {
@@ -378,7 +381,8 @@ export const translations = {
     openSourceLicense: 'Lizenz (MIT)',
     attributions: 'Danksagung & Lizenzen',
     onDeviceGuarantee: '100% Lokal & Sicher',
-    onDeviceDescription: 'Ihre Fotos verlassen Ihr Gerät niemals. Die Verarbeitung erfolgt vollständig lokal in Ihrem Browser ohne Cloud-Uploads oder Tracking.',
+    onDeviceDescription:
+      'Ihre Fotos verlassen Ihr Gerät niemals. Die Verarbeitung erfolgt vollständig lokal in Ihrem Browser ohne Cloud-Uploads oder Tracking.',
     close: 'Schließen',
   },
   hi: {
@@ -469,7 +473,8 @@ export const translations = {
     openSourceLicense: 'लाइसेंस (MIT)',
     attributions: 'क्रेडिट और लाइसेंस',
     onDeviceGuarantee: '100% डिवाइस पर सुरक्षित और निजी',
-    onDeviceDescription: 'आपकी तस्वीरें कभी भी आपके डिवाइस से बाहर नहीं जाती हैं। सभी प्रोसेसिंग बिना किसी सर्वर अपलोड या ट्रैकिंग के सीधे ब्राउज़र में होती है।',
+    onDeviceDescription:
+      'आपकी तस्वीरें कभी भी आपके डिवाइस से बाहर नहीं जाती हैं। सभी प्रोसेसिंग बिना किसी सर्वर अपलोड या ट्रैकिंग के सीधे ब्राउज़र में होती है।',
     close: 'बंद करें',
   },
   ja: {
@@ -560,7 +565,8 @@ export const translations = {
     openSourceLicense: 'ライセンス (MIT)',
     attributions: '著作権・帰属表示',
     onDeviceGuarantee: '100% デバイス内処理・完全非公開',
-    onDeviceDescription: '写真データはお使いのデバイスの外に出ることは一切ありません。外部サーバーへの送信や追跡を行わず、すべてブラウザ内で処理されます。',
+    onDeviceDescription:
+      '写真データはお使いのデバイスの外に出ることは一切ありません。外部サーバーへの送信や追跡を行わず、すべてブラウザ内で処理されます。',
     close: '閉じる',
   },
 } as const;

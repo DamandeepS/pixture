@@ -46,9 +46,10 @@ export function ToolPanel() {
   const { t } = useI18n();
 
   const currentPage = pages[currentPageIndex] || pages[0];
-  const selectedAssignment = selectedSlotIndex !== null
-    ? currentPage?.slots.find((s) => s.slotIndex === selectedSlotIndex)
-    : null;
+  const selectedAssignment =
+    selectedSlotIndex !== null
+      ? currentPage?.slots.find((s) => s.slotIndex === selectedSlotIndex)
+      : null;
   const selectedPhoto = selectedAssignment?.photoId
     ? photos.find((p) => p.id === selectedAssignment.photoId)
     : null;
@@ -83,7 +84,8 @@ export function ToolPanel() {
     });
 
     const primPreset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-    const secPreset = PHOTO_PRESETS[config.secondaryPhotoPresetId ?? 'passport_us'] || PHOTO_PRESETS.passport_us;
+    const secPreset =
+      PHOTO_PRESETS[config.secondaryPhotoPresetId ?? 'passport_us'] || PHOTO_PRESETS.passport_us;
 
     return {
       capacity: res.slots.length,
@@ -110,7 +112,8 @@ export function ToolPanel() {
     const primW = config.customPhotoWidthMm || primPreset.widthMm;
     const primH = config.customPhotoHeightMm || primPreset.heightMm;
 
-    const secPreset = PHOTO_PRESETS[config.secondaryPhotoPresetId ?? 'passport_us'] || PHOTO_PRESETS.passport_us;
+    const secPreset =
+      PHOTO_PRESETS[config.secondaryPhotoPresetId ?? 'passport_us'] || PHOTO_PRESETS.passport_us;
     const secW = config.customSecondaryWidthMm || secPreset.widthMm;
     const secH = config.customSecondaryHeightMm || secPreset.heightMm;
 
@@ -196,7 +199,8 @@ export function ToolPanel() {
                     <span>{capacityInfo.primaryName}</span>
                   ) : (
                     <span>
-                      {config.primaryPhotoCount ?? 1} × Size 1 + {config.secondaryPhotoCount ?? 4} × Size 2
+                      {config.primaryPhotoCount ?? 1} × Size 1 + {config.secondaryPhotoCount ?? 4} ×
+                      Size 2
                     </span>
                   )}
                 </div>
@@ -208,9 +212,7 @@ export function ToolPanel() {
 
             {/* Paper Size */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-md-on-surface block">
-                {t('paperSize')}
-              </label>
+              <label className="font-semibold text-md-on-surface block">{t('paperSize')}</label>
               <select
                 value={config.paperId}
                 onChange={(e) => updateConfig({ paperId: e.target.value })}
@@ -226,9 +228,7 @@ export function ToolPanel() {
 
             {/* Paper Orientation */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-md-on-surface block">
-                {t('orientation')}
-              </label>
+              <label className="font-semibold text-md-on-surface block">{t('orientation')}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => updateConfig({ orientation: 'portrait' })}
@@ -255,9 +255,7 @@ export function ToolPanel() {
 
             {/* Layout Mode */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-md-on-surface block">
-                {t('layoutMode')}
-              </label>
+              <label className="font-semibold text-md-on-surface block">{t('layoutMode')}</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   onClick={() => updateConfig({ layoutMode: 'uniform' })}
@@ -285,9 +283,7 @@ export function ToolPanel() {
             {/* UNIFORM: Single Target Photo Size Preset */}
             {config.layoutMode === 'uniform' ? (
               <div className="space-y-1.5">
-                <label className="font-semibold text-md-on-surface block">
-                  {t('photoSize')}
-                </label>
+                <label className="font-semibold text-md-on-surface block">{t('photoSize')}</label>
                 <select
                   value={config.photoPresetId}
                   onChange={(e) => updateConfig({ photoPresetId: e.target.value })}
@@ -563,15 +559,14 @@ export function ToolPanel() {
             <div className="bg-md-surface-container p-3 rounded-md-lg flex items-start gap-2.5">
               <Info className="w-4 h-4 text-google-blue shrink-0 mt-0.5" />
               <p className="text-[11px] text-md-on-surface-variant leading-relaxed break-words min-w-0 flex-1">
-                Cut marks ensure clean alignment with scissors or a paper trimmer. Corner tick marks stay outside the photo so no ink shows after trimming.
+                Cut marks ensure clean alignment with scissors or a paper trimmer. Corner tick marks
+                stay outside the photo so no ink shows after trimming.
               </p>
             </div>
 
             {/* Cut Mark Style */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-md-on-surface block">
-                {t('cutMarkStyle')}
-              </label>
+              <label className="font-semibold text-md-on-surface block">{t('cutMarkStyle')}</label>
               <div className="space-y-2">
                 {[
                   { id: 'corners', label: t('markCorners') },
@@ -603,9 +598,7 @@ export function ToolPanel() {
 
             {/* Mark Color Swatches */}
             <div className="space-y-1.5">
-              <label className="font-semibold text-md-on-surface block">
-                {t('markColor')}
-              </label>
+              <label className="font-semibold text-md-on-surface block">{t('markColor')}</label>
               <div className="flex items-center gap-2">
                 {[
                   { hex: '#202124', name: 'Charcoal' },
@@ -615,6 +608,7 @@ export function ToolPanel() {
                 ].map((c) => (
                   <button
                     key={c.hex}
+                    type="button"
                     onClick={() => updateConfig({ cutMarkColor: c.hex })}
                     className={`w-7 h-7 rounded-md-full border-2 transition-all ${
                       config.cutMarkColor === c.hex
@@ -623,6 +617,7 @@ export function ToolPanel() {
                     }`}
                     style={{ backgroundColor: c.hex }}
                     title={c.name}
+                    aria-label={`Cut mark color: ${c.name}`}
                   />
                 ))}
               </div>
@@ -670,15 +665,13 @@ export function ToolPanel() {
                 e.target.value = '';
               }}
               className="hidden"
-              aria-hidden="true"
+              tabIndex={-1}
             />
 
             {selectedSlotIndex === null ? (
               <div className="py-12 text-center text-md-on-surface-variant flex flex-col items-center justify-center gap-2">
                 <Sliders className="w-8 h-8 opacity-40 mb-1" />
-                <p className="text-xs max-w-[200px] leading-relaxed">
-                  {t('noPhotoSelected')}
-                </p>
+                <p className="text-xs max-w-[200px] leading-relaxed">{t('noPhotoSelected')}</p>
               </div>
             ) : !selectedPhoto || !adj ? (
               <div className="space-y-4">
@@ -727,7 +720,11 @@ export function ToolPanel() {
                           className="aspect-square rounded-md-sm border border-md-outline-variant hover:border-md-primary hover:scale-105 transition-all overflow-hidden bg-md-surface-container group/btn relative"
                           title={p.name}
                         >
-                          <img src={p.dataUrl} alt={p.name} className="w-full h-full object-cover" />
+                          <img
+                            src={p.dataUrl}
+                            alt={p.name}
+                            className="w-full h-full object-cover"
+                          />
                           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/btn:opacity-100 flex items-center justify-center text-white text-[10px] font-bold">
                             <Plus className="w-4 h-4" />
                           </div>
@@ -762,7 +759,9 @@ export function ToolPanel() {
                               : 'bg-google-green'
                           }`}
                         >
-                          {selectedSlotIndex < (config.primaryPhotoCount ?? 1) ? 'Size 1' : 'Size 2'}
+                          {selectedSlotIndex < (config.primaryPhotoCount ?? 1)
+                            ? 'Size 1'
+                            : 'Size 2'}
                         </span>
                       )}
                     </div>
@@ -780,9 +779,7 @@ export function ToolPanel() {
 
                 {/* Fitting Mode: Fill vs Fit */}
                 <div className="space-y-1.5">
-                  <label className="font-semibold text-md-on-surface block">
-                    {t('fitMode')}
-                  </label>
+                  <label className="font-semibold text-md-on-surface block">{t('fitMode')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => updateSlotAdjustments(selectedSlotIndex, { fitMode: 'cover' })}
@@ -795,7 +792,9 @@ export function ToolPanel() {
                       {t('fitCover')}
                     </button>
                     <button
-                      onClick={() => updateSlotAdjustments(selectedSlotIndex, { fitMode: 'contain' })}
+                      onClick={() =>
+                        updateSlotAdjustments(selectedSlotIndex, { fitMode: 'contain' })
+                      }
                       className={`py-1.5 px-2 rounded-md-md border text-center transition-all ${
                         adj.fitMode === 'contain'
                           ? 'bg-md-primary-container border-md-primary text-md-on-primary-container font-semibold'
@@ -816,18 +815,20 @@ export function ToolPanel() {
                   className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-md-md border border-md-outline-variant hover:bg-md-surface-container font-medium text-xs text-md-on-surface transition-colors"
                 >
                   <RotateCw className="w-3.5 h-3.5" />
-                  <span>{t('rotate90')} ({adj.rotation}°)</span>
+                  <span>
+                    {t('rotate90')} ({adj.rotation}°)
+                  </span>
                 </button>
 
                 {/* White Border Toggle */}
                 <label className="flex items-center justify-between cursor-pointer pt-1">
-                  <span className="font-medium text-xs text-md-on-surface">
-                    {t('whiteBorder')}
-                  </span>
+                  <span className="font-medium text-xs text-md-on-surface">{t('whiteBorder')}</span>
                   <input
                     type="checkbox"
                     checked={adj.hasWhiteBorder}
-                    onChange={(e) => updateSlotAdjustments(selectedSlotIndex, { hasWhiteBorder: e.target.checked })}
+                    onChange={(e) =>
+                      updateSlotAdjustments(selectedSlotIndex, { hasWhiteBorder: e.target.checked })
+                    }
                     className="w-4 h-4 rounded text-md-primary focus:ring-md-primary"
                   />
                 </label>
@@ -841,7 +842,9 @@ export function ToolPanel() {
                     <input
                       type="checkbox"
                       checked={adj.isPolaroid}
-                      onChange={(e) => updateSlotAdjustments(selectedSlotIndex, { isPolaroid: e.target.checked })}
+                      onChange={(e) =>
+                        updateSlotAdjustments(selectedSlotIndex, { isPolaroid: e.target.checked })
+                      }
                       className="w-4 h-4 rounded text-md-primary focus:ring-md-primary"
                     />
                   </label>
@@ -851,7 +854,11 @@ export function ToolPanel() {
                       type="text"
                       placeholder="Write a retro caption..."
                       value={adj.polaroidCaption || ''}
-                      onChange={(e) => updateSlotAdjustments(selectedSlotIndex, { polaroidCaption: e.target.value })}
+                      onChange={(e) =>
+                        updateSlotAdjustments(selectedSlotIndex, {
+                          polaroidCaption: e.target.value,
+                        })
+                      }
                       className="w-full bg-md-surface-container border border-md-outline-variant rounded-md-md px-2.5 py-1.5 text-xs text-md-on-surface focus:outline-none focus:border-md-primary font-caveat text-sm"
                     />
                   )}
@@ -874,7 +881,11 @@ export function ToolPanel() {
                       min="-50"
                       max="50"
                       value={adj.brightness}
-                      onChange={(e) => updateSlotAdjustments(selectedSlotIndex, { brightness: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateSlotAdjustments(selectedSlotIndex, {
+                          brightness: Number(e.target.value),
+                        })
+                      }
                       className="w-full accent-md-primary"
                     />
                   </div>
@@ -890,20 +901,24 @@ export function ToolPanel() {
                       min="-50"
                       max="50"
                       value={adj.contrast}
-                      onChange={(e) => updateSlotAdjustments(selectedSlotIndex, { contrast: Number(e.target.value) })}
+                      onChange={(e) =>
+                        updateSlotAdjustments(selectedSlotIndex, {
+                          contrast: Number(e.target.value),
+                        })
+                      }
                       className="w-full accent-md-primary"
                     />
                   </div>
 
                   {/* Black & White Toggle */}
                   <label className="flex items-center justify-between cursor-pointer pt-1">
-                    <span className="font-medium text-xs text-md-on-surface">
-                      {t('grayscale')}
-                    </span>
+                    <span className="font-medium text-xs text-md-on-surface">{t('grayscale')}</span>
                     <input
                       type="checkbox"
                       checked={adj.grayscale}
-                      onChange={(e) => updateSlotAdjustments(selectedSlotIndex, { grayscale: e.target.checked })}
+                      onChange={(e) =>
+                        updateSlotAdjustments(selectedSlotIndex, { grayscale: e.target.checked })
+                      }
                       className="w-4 h-4 rounded text-md-primary focus:ring-md-primary"
                     />
                   </label>

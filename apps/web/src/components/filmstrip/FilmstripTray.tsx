@@ -1,11 +1,5 @@
 import React, { useRef, useState } from 'react';
-import {
-  Upload,
-  Trash2,
-  CopyCheck,
-  Sparkles,
-  Image as ImageIcon,
-} from 'lucide-react';
+import { Upload, Trash2, CopyCheck, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { useProject } from '../../state/ProjectContext.js';
 import { useI18n } from '@pixture/i18n';
 
@@ -53,7 +47,8 @@ export function FilmstripTray() {
       className="h-28 border-t border-md-outline-variant bg-md-surface px-4 py-2 flex items-center gap-4 shrink-0 select-none z-20"
     >
       {/* Upload Drop Zone / Button */}
-      <div
+      <button
+        type="button"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -79,9 +74,9 @@ export function FilmstripTray() {
           accept="image/*"
           onChange={(e) => handleFiles(e.target.files)}
           className="hidden"
-          aria-hidden="true"
+          tabIndex={-1}
         />
-      </div>
+      </button>
 
       <div className="h-16 w-[1px] bg-md-outline-variant shrink-0"></div>
 
@@ -125,6 +120,8 @@ export function FilmstripTray() {
           photos.map((photo) => (
             <div
               key={photo.id}
+              role="button"
+              tabIndex={0}
               draggable
               onDragStart={(e) => {
                 e.dataTransfer.setData('text/plain', photo.id);
@@ -134,6 +131,15 @@ export function FilmstripTray() {
                 if (selectedSlotIndex !== null) {
                   assignPhotoToSlot(selectedSlotIndex, photo.id);
                   announce(`Assigned photo to slot ${selectedSlotIndex + 1}`);
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  if (selectedSlotIndex !== null) {
+                    assignPhotoToSlot(selectedSlotIndex, photo.id);
+                    announce(`Assigned photo to slot ${selectedSlotIndex + 1}`);
+                  }
                 }
               }}
               className="h-full min-w-[76px] w-[76px] relative group rounded-md-md border border-md-outline-variant overflow-hidden bg-md-surface-container cursor-grab active:cursor-grabbing hover:shadow-md-2 hover:border-md-primary transition-all shrink-0 flex flex-col"

@@ -22,14 +22,18 @@ interface LegalModalProps {
 
 export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalModalProps) {
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<'privacy' | 'terms' | 'license' | 'attributions'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'privacy' | 'terms' | 'license' | 'attributions'>(
+    defaultTab
+  );
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
 
-  // Sync tab if defaultTab changes when reopened
-  useEffect(() => {
+  // Synchronize state during render when modal opens
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setActiveTab(defaultTab);
     }
-  }, [isOpen, defaultTab]);
+  }
 
   // Handle ESC key to close modal
   useEffect(() => {
@@ -49,16 +53,23 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
-      role="dialog"
+    <dialog
+      open
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent w-full h-full max-w-none max-h-none m-0 border-none animate-fade-in"
       aria-modal="true"
       aria-labelledby="legal-dialog-title"
     >
-      <div
-        className="w-full max-w-3xl max-h-[88vh] flex flex-col bg-md-surface rounded-2xl shadow-md-3 border border-md-outline-variant overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+      {/* Backdrop overlay */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-default"
+        aria-label={t('close')}
+        tabIndex={-1}
+      />
+
+      {/* Modal card container */}
+      <div className="relative w-full max-w-3xl max-h-[88vh] flex flex-col bg-md-surface rounded-2xl shadow-md-3 border border-md-outline-variant overflow-hidden z-10">
         {/* Header with Title and Close Button */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-md-outline-variant bg-md-surface-container-low">
           <div className="flex items-center gap-3">
@@ -167,7 +178,8 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                   </div>
                   <h4 className="text-xs font-bold text-md-on-surface">100% Client-Side</h4>
                   <p className="text-[11px] leading-normal text-md-on-surface-variant">
-                    Photos are processed entirely within your browser memory using HTML5 Canvas and WebAssembly. No photos are ever uploaded to any server.
+                    Photos are processed entirely within your browser memory using HTML5 Canvas and
+                    WebAssembly. No photos are ever uploaded to any server.
                   </p>
                 </div>
 
@@ -177,7 +189,8 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                   </div>
                   <h4 className="text-xs font-bold text-md-on-surface">Zero Telemetry</h4>
                   <p className="text-[11px] leading-normal text-md-on-surface-variant">
-                    No third-party trackers, no cookies, no analytics beacons (no Google Analytics, no Facebook Pixels), and no user profiling.
+                    No third-party trackers, no cookies, no analytics beacons (no Google Analytics,
+                    no Facebook Pixels), and no user profiling.
                   </p>
                 </div>
 
@@ -187,7 +200,8 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                   </div>
                   <h4 className="text-xs font-bold text-md-on-surface">Local Storage</h4>
                   <p className="text-[11px] leading-normal text-md-on-surface-variant">
-                    Session state is stored solely in your browser's private IndexedDB on your local disk. You can wipe it anytime by resetting or clearing site data.
+                    Session state is stored solely in your browser's private IndexedDB on your local
+                    disk. You can wipe it anytime by resetting or clearing site data.
                   </p>
                 </div>
               </div>
@@ -197,21 +211,29 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                   Biometric Photos & Identity Documents
                 </h4>
                 <p className="text-xs">
-                  Pixture does not perform facial recognition, facial geometry extraction, or biometric scanning. Sensitive government documents such as passport and visa photographs remain strictly in local memory and are never transmitted over the internet.
+                  Pixture does not perform facial recognition, facial geometry extraction, or
+                  biometric scanning. Sensitive government documents such as passport and visa
+                  photographs remain strictly in local memory and are never transmitted over the
+                  internet.
                 </p>
 
                 <h4 className="text-sm font-semibold text-md-on-surface">
                   GDPR & CCPA Compliance by Design
                 </h4>
                 <p className="text-xs">
-                  Under the European Union General Data Protection Regulation (GDPR Article 25) and California Consumer Privacy Act (CCPA), Pixture practices complete data minimization. Because no personal data or photos are ever collected or stored remotely, there is zero risk of server data breaches.
+                  Under the European Union General Data Protection Regulation (GDPR Article 25) and
+                  California Consumer Privacy Act (CCPA), Pixture practices complete data
+                  minimization. Because no personal data or photos are ever collected or stored
+                  remotely, there is zero risk of server data breaches.
                 </p>
 
                 <h4 className="text-sm font-semibold text-md-on-surface">
                   Offline Mode (Airplane Mode)
                 </h4>
                 <p className="text-xs">
-                  You can verify our privacy guarantee at any time: disconnect your device from Wi-Fi or turn on Airplane Mode, and Pixture will continue to generate photo sheets, crop, adjust, and export high-resolution PDFs and PNGs seamlessly.
+                  You can verify our privacy guarantee at any time: disconnect your device from
+                  Wi-Fi or turn on Airplane Mode, and Pixture will continue to generate photo
+                  sheets, crop, adjust, and export high-resolution PDFs and PNGs seamlessly.
                 </p>
               </div>
             </div>
@@ -237,11 +259,21 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                     Official Passport & Visa Photo Acceptance Disclaimer
                   </span>
                   <p>
-                    While Pixture provides predefined templates adhering to published standard dimensional specifications (e.g. US 2×2", UK/EU 35×45mm, India 35×45mm):
+                    While Pixture provides predefined templates adhering to published standard
+                    dimensional specifications (e.g. US 2×2", UK/EU 35×45mm, India 35×45mm):
                   </p>
                   <ul className="list-disc pl-4 space-y-0.5 pt-1">
-                    <li>Government passport agencies and consulates enforce strict biometric rules beyond physical dimensions (including neutral facial expression, eye level height, lighting uniformity, plain light background, and matte vs. glossy paper finish).</li>
-                    <li>You are solely responsible for reviewing and verifying the official guidelines of your issuing government authority. Pixture accepts no liability for rejected passport or visa applications or associated travel delays.</li>
+                    <li>
+                      Government passport agencies and consulates enforce strict biometric rules
+                      beyond physical dimensions (including neutral facial expression, eye level
+                      height, lighting uniformity, plain light background, and matte vs. glossy
+                      paper finish).
+                    </li>
+                    <li>
+                      You are solely responsible for reviewing and verifying the official guidelines
+                      of your issuing government authority. Pixture accepts no liability for
+                      rejected passport or visa applications or associated travel delays.
+                    </li>
                   </ul>
                 </div>
               </div>
@@ -253,19 +285,32 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                   <span>Printing & Physical Cutter Tolerances</span>
                 </div>
                 <p className="text-xs">
-                  Actual printed dimensions are subject to printer feed roller tolerances, paper expansion under heat/humidity, printer margin scaling (ensure your print dialog is set to <strong>"Actual Size" / 100% Scale</strong>), and cutter blade alignment. We strongly recommend making a test print on plain paper and checking with a physical ruler before cutting final photo sheets.
+                  Actual printed dimensions are subject to printer feed roller tolerances, paper
+                  expansion under heat/humidity, printer margin scaling (ensure your print dialog is
+                  set to <strong>"Actual Size" / 100% Scale</strong>), and cutter blade alignment.
+                  We strongly recommend making a test print on plain paper and checking with a
+                  physical ruler before cutting final photo sheets.
                 </p>
               </div>
 
               <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-md-on-surface">Photo Ownership & Copyright</h4>
+                <h4 className="text-sm font-semibold text-md-on-surface">
+                  Photo Ownership & Copyright
+                </h4>
                 <p className="text-xs">
-                  You retain 100% intellectual property ownership of all photos you load into Pixture. By using Pixture, you represent that you own or possess the legal right and permission to duplicate, crop, and print the uploaded images.
+                  You retain 100% intellectual property ownership of all photos you load into
+                  Pixture. By using Pixture, you represent that you own or possess the legal right
+                  and permission to duplicate, crop, and print the uploaded images.
                 </p>
 
-                <h4 className="text-sm font-semibold text-md-on-surface">Limitation of Liability</h4>
+                <h4 className="text-sm font-semibold text-md-on-surface">
+                  Limitation of Liability
+                </h4>
                 <p className="text-xs">
-                  The software is provided "AS IS", without warranty of any kind. Under no circumstances shall the authors or contributors be liable for any direct, indirect, incidental, or consequential damages arising from the use or inability to use the software.
+                  The software is provided "AS IS", without warranty of any kind. Under no
+                  circumstances shall the authors or contributors be liable for any direct,
+                  indirect, incidental, or consequential damages arising from the use or inability
+                  to use the software.
                 </p>
               </div>
             </div>
@@ -284,7 +329,7 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
               </div>
 
               <div className="p-4 rounded-xl bg-md-surface-container font-mono text-[11px] leading-relaxed text-md-on-surface border border-md-outline-variant/70 overflow-x-auto whitespace-pre-wrap select-all">
-{`MIT License
+                {`MIT License
 
 Copyright (c) 2026 Pixture Contributors
 
@@ -324,42 +369,60 @@ SOFTWARE.`}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                 <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
                   <div className="font-semibold text-md-on-surface">React & React-DOM</div>
-                  <div className="text-[11px] text-md-on-surface-variant">Meta Platforms, Inc. • MIT License</div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    Meta Platforms, Inc. • MIT License
+                  </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
                   <div className="font-semibold text-md-on-surface">Vite</div>
-                  <div className="text-[11px] text-md-on-surface-variant">Evan You & Vite Contributors • MIT License</div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    Evan You & Vite Contributors • MIT License
+                  </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
                   <div className="font-semibold text-md-on-surface">Tailwind CSS</div>
-                  <div className="text-[11px] text-md-on-surface-variant">Tailwind Labs, Inc. • MIT License</div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    Tailwind Labs, Inc. • MIT License
+                  </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
                   <div className="font-semibold text-md-on-surface">pdf-lib</div>
-                  <div className="text-[11px] text-md-on-surface-variant">Andrew Dillon • MIT License</div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    Andrew Dillon • MIT License
+                  </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
                   <div className="font-semibold text-md-on-surface">Lucide Icons</div>
-                  <div className="text-[11px] text-md-on-surface-variant">Lucide Project Authors • ISC License</div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    Lucide Project Authors • ISC License
+                  </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
                   <div className="font-semibold text-md-on-surface">idb-keyval</div>
-                  <div className="text-[11px] text-md-on-surface-variant">Jake Archibald • Apache 2.0 License</div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    Jake Archibald • Apache 2.0 License
+                  </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
                   <div className="font-semibold text-md-on-surface">canvas-confetti</div>
-                  <div className="text-[11px] text-md-on-surface-variant">Kiril Vatev • ISC License</div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    Kiril Vatev • ISC License
+                  </div>
                 </div>
 
                 <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
-                  <div className="font-semibold text-md-on-surface">Google Material Design 3 Tokens</div>
-                  <div className="text-[11px] text-md-on-surface-variant">Google LLC • Apache 2.0 License</div>
+                  <div className="font-semibold text-md-on-surface">
+                    Google Material Design 3 Tokens
+                  </div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    Google LLC • Apache 2.0 License
+                  </div>
                 </div>
               </div>
             </div>
@@ -381,6 +444,6 @@ SOFTWARE.`}
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

@@ -123,8 +123,8 @@ export function SheetCanvas() {
 
   // Cut marks lines (only for filled slots with assigned photos!)
   const cutMarks = useMemo(() => {
-    const filledSlots = slotsGeometry.filter(
-      (slotGeom) => currentPage?.slots.some((s) => s.slotIndex === slotGeom.index && s.photoId)
+    const filledSlots = slotsGeometry.filter((slotGeom) =>
+      currentPage?.slots.some((s) => s.slotIndex === slotGeom.index && s.photoId)
     );
 
     return generateCutMarks({
@@ -201,7 +201,7 @@ export function SheetCanvas() {
         multiple
         onChange={handleSlotFileChange}
         className="hidden"
-        aria-hidden="true"
+        tabIndex={-1}
       />
 
       {/* Floating Canvas Controls (Page Switcher, Cut Mark Toggle, Sample Photos, Zoom) */}
@@ -336,7 +336,15 @@ export function SheetCanvas() {
 
           {/* Actual Sheet Paper */}
           <div
-            className="relative bg-white overflow-hidden cursor-default"
+            role="region"
+            aria-label="Print sheet canvas"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setSelectedSlotIndex(null);
+              }
+            }}
+            className="relative bg-white overflow-hidden cursor-default focus:outline-none"
             style={{
               width: `${sheetPixelW}px`,
               height: `${sheetPixelH}px`,
@@ -372,7 +380,9 @@ export function SheetCanvas() {
                     y2={line.y2Mm * pxPerMm}
                     stroke={config.cutMarkColor || '#5f6368'}
                     strokeWidth={Math.max(1, 0.12 * pxPerMm)}
-                    strokeDasharray={line.style === 'dashed' ? `${3 * pxPerMm},${3 * pxPerMm}` : undefined}
+                    strokeDasharray={
+                      line.style === 'dashed' ? `${3 * pxPerMm},${3 * pxPerMm}` : undefined
+                    }
                   />
                 ))}
               </svg>
@@ -464,7 +474,8 @@ export function SheetCanvas() {
                           title={`Bleed zone: +${bleed}mm`}
                         />
                       )}
-                      <div
+                      <button
+                        type="button"
                         className="w-full h-full border border-dashed border-md-outline/70 hover:border-md-primary hover:bg-md-primary-container/20 flex flex-col items-center justify-center p-2 text-center text-md-on-surface-variant hover:text-md-primary transition-all group/slot cursor-pointer relative z-10 bg-white"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -473,6 +484,7 @@ export function SheetCanvas() {
                           slotFileInputRef.current?.click();
                         }}
                         title={t('clickToUpload')}
+                        aria-label={`Slot ${slotGeom.index + 1}: ${t('clickToUpload')}`}
                       >
                         <div className="w-7 h-7 rounded-md-full bg-md-surface-container group-hover/slot:bg-md-primary group-hover/slot:text-white flex items-center justify-center transition-colors mb-1 shadow-sm">
                           <Plus className="w-4 h-4" />
@@ -482,132 +494,142 @@ export function SheetCanvas() {
                         </span>
                         <span className="text-[8px] opacity-75 mt-0.5 font-medium">
                           {config.layoutMode === 'mixed' && (
-                            <span className={`font-bold mr-1 ${slotGeom.sizeType === 'primary' ? 'text-md-primary' : 'text-google-green'}`}>
+                            <span
+                              className={`font-bold mr-1 ${slotGeom.sizeType === 'primary' ? 'text-md-primary' : 'text-google-green'}`}
+                            >
                               {slotGeom.sizeType === 'primary' ? 'Size 1:' : 'Size 2:'}
                             </span>
                           )}
                           {slotGeom.widthMm.toFixed(0)} × {slotGeom.heightMm.toFixed(0)} mm
                           {bleed > 0 ? ` (+${bleed}mm bleed)` : ''}
                         </span>
-                      </div>
+                      </button>
                     </div>
                   )}
 
                   {/* Filled Slot Photo Rendering */}
-                  {photo && adj && (() => {
-                    const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
-                    const rotScale = isRotated90
-                      ? (adj.fitMode === 'contain'
+                  {photo &&
+                    adj &&
+                    (() => {
+                      const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
+                      const rotScale = isRotated90
+                        ? adj.fitMode === 'contain'
                           ? Math.min(slotW / slotH, slotH / slotW)
-                          : Math.max(slotW / slotH, slotH / slotW))
-                      : 1;
-                    const effectiveZoom = adj.zoom * rotScale;
+                          : Math.max(slotW / slotH, slotH / slotW)
+                        : 1;
+                      const effectiveZoom = adj.zoom * rotScale;
 
-                    return (
-                      <div className="w-full h-full relative overflow-hidden flex items-center justify-center">
-                        <div
-                          className="relative overflow-hidden w-full h-full flex items-center justify-center"
-                          style={{
-                            padding: adj.isPolaroid
-                              ? `${5 * pxPerMm}px ${5 * pxPerMm}px ${20 * pxPerMm}px ${5 * pxPerMm}px`
-                              : adj.hasWhiteBorder
-                                ? `${adj.whiteBorderWidthMm * pxPerMm}px`
-                                : 0,
-                            backgroundColor: '#ffffff',
-                          }}
-                        >
-                          <img
-                            src={photo.dataUrl}
-                            alt={photo.name}
-                            className="max-w-none pointer-events-none select-none transition-transform"
+                      return (
+                        <div className="w-full h-full relative overflow-hidden flex items-center justify-center">
+                          <div
+                            className="relative overflow-hidden w-full h-full flex items-center justify-center"
                             style={{
-                              width: adj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
-                              height: adj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
-                              objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
-                              objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
-                              transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
-                              filter: buildCssFilterString(adj),
+                              padding: adj.isPolaroid
+                                ? `${5 * pxPerMm}px ${5 * pxPerMm}px ${20 * pxPerMm}px ${5 * pxPerMm}px`
+                                : adj.hasWhiteBorder
+                                  ? `${adj.whiteBorderWidthMm * pxPerMm}px`
+                                  : 0,
+                              backgroundColor: '#ffffff',
                             }}
-                          />
-
-                          {/* Trim Line Guide (Cut Boundary when Bleed is active) */}
-                          {bleed > 0 && (
-                            <div
-                              className="absolute pointer-events-none z-10 border border-dashed border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.35)]"
+                          >
+                            <img
+                              src={photo.dataUrl}
+                              alt={photo.name}
+                              className="max-w-none pointer-events-none select-none transition-transform"
                               style={{
-                                left: `${bleedPx}px`,
-                                top: `${bleedPx}px`,
-                                width: `${slotGeom.widthMm * pxPerMm}px`,
-                                height: `${slotGeom.heightMm * pxPerMm}px`,
+                                width:
+                                  adj.fitMode === 'contain' && !isRotated90
+                                    ? '100%'
+                                    : `${100 * effectiveZoom}%`,
+                                height:
+                                  adj.fitMode === 'contain' && !isRotated90
+                                    ? '100%'
+                                    : `${100 * effectiveZoom}%`,
+                                objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
+                                objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
+                                transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
+                                filter: buildCssFilterString(adj),
                               }}
-                              title={`Trim boundary: ${slotGeom.widthMm} × ${slotGeom.heightMm} mm (+${bleed}mm bleed)`}
                             />
-                          )}
 
-                          {adj.isPolaroid && adj.polaroidCaption && (
+                            {/* Trim Line Guide (Cut Boundary when Bleed is active) */}
+                            {bleed > 0 && (
+                              <div
+                                className="absolute pointer-events-none z-10 border border-dashed border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.35)]"
+                                style={{
+                                  left: `${bleedPx}px`,
+                                  top: `${bleedPx}px`,
+                                  width: `${slotGeom.widthMm * pxPerMm}px`,
+                                  height: `${slotGeom.heightMm * pxPerMm}px`,
+                                }}
+                                title={`Trim boundary: ${slotGeom.widthMm} × ${slotGeom.heightMm} mm (+${bleed}mm bleed)`}
+                              />
+                            )}
+
+                            {adj.isPolaroid && adj.polaroidCaption && (
+                              <div
+                                className="absolute bottom-1 w-full text-center font-caveat text-md-on-surface truncate px-1"
+                                style={{ fontSize: `${Math.max(10, 3.5 * pxPerMm)}px` }}
+                              >
+                                {adj.polaroidCaption}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Mixed Dual Size Indicator Badge */}
+                          {config.layoutMode === 'mixed' && (
                             <div
-                              className="absolute bottom-1 w-full text-center font-caveat text-md-on-surface truncate px-1"
-                              style={{ fontSize: `${Math.max(10, 3.5 * pxPerMm)}px` }}
+                              className={`absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md-full text-[9px] font-bold z-20 pointer-events-none shadow-sm ${
+                                slotGeom.sizeType === 'primary'
+                                  ? 'bg-md-primary text-white'
+                                  : 'bg-google-green text-white'
+                              }`}
                             >
-                              {adj.polaroidCaption}
+                              {slotGeom.sizeType === 'primary' ? 'Size 1' : 'Size 2'}
                             </div>
                           )}
-                        </div>
 
-                        {/* Mixed Dual Size Indicator Badge */}
-                        {config.layoutMode === 'mixed' && (
-                          <div
-                            className={`absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md-full text-[9px] font-bold z-20 pointer-events-none shadow-sm ${
-                              slotGeom.sizeType === 'primary'
-                                ? 'bg-md-primary text-white'
-                                : 'bg-google-green text-white'
-                            }`}
-                          >
-                            {slotGeom.sizeType === 'primary' ? 'Size 1' : 'Size 2'}
+                          {/* Hover / Selected Overlay Toolbar */}
+                          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center gap-1 bg-black/75 backdrop-blur-sm p-1 rounded-md-full text-white transition-opacity z-20">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedSlotIndex(slotGeom.index);
+                                setIsCropModalOpen(true);
+                              }}
+                              className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
+                              title={t('cropAndAdjust')}
+                              aria-label={t('cropAndAdjust')}
+                            >
+                              <Crop className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const nextRot = (adj.rotation + 90) % 360;
+                                updateSlotAdjustments(slotGeom.index, { rotation: nextRot });
+                              }}
+                              className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
+                              title={t('rotate90')}
+                              aria-label={t('rotate90')}
+                            >
+                              <RotateCw className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                assignPhotoToSlot(slotGeom.index, null);
+                              }}
+                              className="p-1 hover:bg-white/20 rounded-md-full text-google-red transition-colors"
+                              title={t('removePhoto')}
+                              aria-label={t('removePhoto')}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
                           </div>
-                        )}
-
-                        {/* Hover / Selected Overlay Toolbar */}
-                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center gap-1 bg-black/75 backdrop-blur-sm p-1 rounded-md-full text-white transition-opacity z-20">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedSlotIndex(slotGeom.index);
-                              setIsCropModalOpen(true);
-                            }}
-                            className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
-                            title={t('cropAndAdjust')}
-                            aria-label={t('cropAndAdjust')}
-                          >
-                            <Crop className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const nextRot = ((adj.rotation + 90) % 360);
-                              updateSlotAdjustments(slotGeom.index, { rotation: nextRot });
-                            }}
-                            className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
-                            title={t('rotate90')}
-                            aria-label={t('rotate90')}
-                          >
-                            <RotateCw className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              assignPhotoToSlot(slotGeom.index, null);
-                            }}
-                            className="p-1 hover:bg-white/20 rounded-md-full text-google-red transition-colors"
-                            title={t('removePhoto')}
-                            aria-label={t('removePhoto')}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
                         </div>
-                      </div>
-                    );
-                  })()}
+                      );
+                    })()}
                 </div>
               );
             })}

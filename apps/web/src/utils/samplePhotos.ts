@@ -74,7 +74,12 @@ export const SAMPLE_PHOTOS: PhotoAsset[] = [
   {
     id: 'sample_landscape_1',
     name: 'Golden Mountain Sunset',
-    dataUrl: createSampleSvg('Golden Mountain Sunset', 'landscape', ['#ea4335', '#b71c1c'], '#f28b82'),
+    dataUrl: createSampleSvg(
+      'Golden Mountain Sunset',
+      'landscape',
+      ['#ea4335', '#b71c1c'],
+      '#f28b82'
+    ),
     width: 1200,
     height: 800,
     type: 'image/svg+xml',
@@ -83,7 +88,12 @@ export const SAMPLE_PHOTOS: PhotoAsset[] = [
   {
     id: 'sample_nature_1',
     name: 'Emerald Forest Hills',
-    dataUrl: createSampleSvg('Emerald Forest Hills', 'landscape', ['#188038', '#0d652d'], '#81c995'),
+    dataUrl: createSampleSvg(
+      'Emerald Forest Hills',
+      'landscape',
+      ['#188038', '#0d652d'],
+      '#81c995'
+    ),
     width: 1200,
     height: 800,
     type: 'image/svg+xml',

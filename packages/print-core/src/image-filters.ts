@@ -158,13 +158,7 @@ export function drawPhotoToContext(
   const panOffsetX = (adj.cropX - 0.5) * -excessX * 2;
   const panOffsetY = (adj.cropY - 0.5) * -excessY * 2;
 
-  ctx.drawImage(
-    img,
-    -drawW / 2 + panOffsetX,
-    -drawH / 2 + panOffsetY,
-    drawW,
-    drawH
-  );
+  ctx.drawImage(img, -drawW / 2 + panOffsetX, -drawH / 2 + panOffsetY, drawW, drawH);
 
   ctx.restore(); // Restore clip from border / polaroid
 

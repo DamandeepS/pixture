@@ -69,8 +69,8 @@ export function Ruler({ orientation, lengthMm, scalePxPerMm, unit }: RulerProps)
                     isFirst
                       ? 'left-[2px] translate-x-0'
                       : isLast
-                      ? 'right-[2px] -translate-x-full'
-                      : 'left-0 -translate-x-1/2'
+                        ? 'right-[2px] -translate-x-full'
+                        : 'left-0 -translate-x-1/2'
                   }`}
                 >
                   {t.label}
@@ -114,8 +114,8 @@ export function Ruler({ orientation, lengthMm, scalePxPerMm, unit }: RulerProps)
                   isFirst
                     ? 'top-[2px] translate-y-0'
                     : isLast
-                    ? 'top-0 -translate-y-full'
-                    : 'top-0 -translate-y-1/2'
+                      ? 'top-0 -translate-y-full'
+                      : 'top-0 -translate-y-1/2'
                 }`}
               >
                 {t.label}
