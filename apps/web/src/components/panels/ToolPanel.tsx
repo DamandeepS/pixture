@@ -86,45 +86,45 @@ export function ToolPanel() {
   return (
     <aside
       aria-label="Configuration and inspector panel"
-      className="w-80 border-l border-md-outline-variant bg-md-surface flex flex-col shrink-0 select-none z-20 h-full overflow-hidden"
+      className="w-84 border-l border-md-outline-variant bg-md-surface flex flex-col shrink-0 select-none z-20 h-full overflow-hidden"
     >
       {/* Segmented Tab Header */}
       <div className="p-3 border-b border-md-outline-variant">
         <div className="flex bg-md-surface-container rounded-md-full p-1 text-xs font-semibold">
           <button
             onClick={() => setActiveTab('sheet')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md-full transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-md-full transition-all whitespace-nowrap ${
               activeTab === 'sheet'
                 ? 'bg-md-primary text-white shadow-md-1'
                 : 'text-md-on-surface-variant hover:text-md-on-surface'
             }`}
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span>{t('sheetSettings')}</span>
+            <FileText className="w-3.5 h-3.5 shrink-0" />
+            <span>{t('tabSheet')}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('cutmarks')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md-full transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-md-full transition-all whitespace-nowrap ${
               activeTab === 'cutmarks'
                 ? 'bg-md-primary text-white shadow-md-1'
                 : 'text-md-on-surface-variant hover:text-md-on-surface'
             }`}
           >
-            <Scissors className="w-3.5 h-3.5" />
-            <span>{t('cutMarks')}</span>
+            <Scissors className="w-3.5 h-3.5 shrink-0" />
+            <span>{t('tabCutMarks')}</span>
           </button>
 
           <button
             onClick={() => setActiveTab('inspector')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md-full transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-md-full transition-all whitespace-nowrap ${
               activeTab === 'inspector'
                 ? 'bg-md-primary text-white shadow-md-1'
                 : 'text-md-on-surface-variant hover:text-md-on-surface'
             }`}
           >
-            <Sliders className="w-3.5 h-3.5" />
-            <span>{t('photoInspector')}</span>
+            <Sliders className="w-3.5 h-3.5 shrink-0" />
+            <span>{t('tabInspector')}</span>
           </button>
         </div>
       </div>
