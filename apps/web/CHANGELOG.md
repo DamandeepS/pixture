@@ -1,5 +1,11 @@
 # web
 
+## 1.1.3
+
+### Patch Changes
+
+- fix(ui): improve contrast and styling of Privacy & Legal button and modal banner to meet Google Material 3 standards
+
 ## 1.1.2
 
 ### Patch Changes

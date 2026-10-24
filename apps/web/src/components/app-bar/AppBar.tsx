@@ -261,11 +261,11 @@ export function AppBar() {
         {/* Legal & Privacy Guarantee Button */}
         <button
           onClick={() => setIsLegalModalOpen(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md-full bg-[#e6f4ea] hover:bg-[#ceead6] border border-[#ceead6] text-xs font-semibold text-[#137333] transition-colors shadow-xs"
           title={`${t('legalAndPrivacy')} (${t('onDeviceGuarantee')})`}
           aria-label={t('legalAndPrivacy')}
         >
-          <ShieldCheck className="w-3.5 h-3.5 text-google-green" />
+          <ShieldCheck className="w-3.5 h-3.5 text-[#1e8e3e]" />
           <span className="hidden md:inline">{t('legalAndPrivacy')}</span>
         </button>
       </div>

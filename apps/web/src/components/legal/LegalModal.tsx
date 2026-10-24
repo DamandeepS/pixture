@@ -97,13 +97,15 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
         </div>
 
         {/* 100% On-Device Banner */}
-        <div className="bg-emerald-50 dark:bg-emerald-950/30 border-b border-emerald-200 dark:border-emerald-800/40 px-6 py-3 flex items-start gap-3">
-          <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Lock className="w-3.5 h-3.5" />
+        <div className="bg-[#e6f4ea] border-b border-[#ceead6] px-6 py-3.5 flex items-start gap-3">
+          <div className="w-6 h-6 rounded-full bg-[#ceead6] text-[#137333] flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Lock className="w-3.5 h-3.5 text-[#1e8e3e]" />
           </div>
-          <div className="text-xs text-emerald-900 dark:text-emerald-200">
-            <span className="font-semibold block">{t('onDeviceGuarantee')}</span>
-            <span className="opacity-90">{t('onDeviceDescription')}</span>
+          <div className="text-xs space-y-0.5">
+            <span className="font-semibold block text-sm text-[#0d652d]">
+              {t('onDeviceGuarantee')}
+            </span>
+            <span className="text-[#137333] leading-relaxed block">{t('onDeviceDescription')}</span>
           </div>
         </div>
 
@@ -174,7 +176,7 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="p-3.5 rounded-xl bg-md-surface-container border border-md-outline-variant/60 flex flex-col gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950/60 text-google-blue flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 text-google-blue flex items-center justify-center">
                     <Cpu className="w-4 h-4" />
                   </div>
                   <h4 className="text-xs font-bold text-md-on-surface">100% Client-Side</h4>
@@ -186,7 +188,7 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-md-surface-container border border-md-outline-variant/60 flex flex-col gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 text-google-green flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-[#e6f4ea] text-google-green flex items-center justify-center">
                     <EyeOff className="w-4 h-4" />
                   </div>
                   <h4 className="text-xs font-bold text-md-on-surface">Zero Telemetry</h4>
@@ -197,7 +199,7 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-md-surface-container border border-md-outline-variant/60 flex flex-col gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-purple-100 dark:bg-purple-950/60 text-purple-600 flex items-center justify-center">
+                  <div className="w-7 h-7 rounded-lg bg-purple-50 text-purple-700 flex items-center justify-center">
                     <Database className="w-4 h-4" />
                   </div>
                   <h4 className="text-xs font-bold text-md-on-surface">Local Storage</h4>
@@ -255,10 +257,10 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
               </div>
 
               {/* Passport Warning Box */}
-              <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                <div className="text-xs space-y-1 text-amber-900 dark:text-amber-200">
-                  <span className="font-bold block text-sm">
+              <div className="p-4 rounded-xl bg-[#fef7e0] border border-[#fce8b2] flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-[#b06000] flex-shrink-0 mt-0.5" />
+                <div className="text-xs space-y-1 text-[#5c3c00]">
+                  <span className="font-bold block text-sm text-[#3e2723]">
                     Official Passport & Visa Photo Acceptance Disclaimer
                   </span>
                   <p>

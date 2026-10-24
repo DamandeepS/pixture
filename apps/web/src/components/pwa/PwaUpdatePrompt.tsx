@@ -56,7 +56,7 @@ export function PwaUpdatePrompt() {
           role="status"
           className="flex items-center gap-2.5 px-4 py-3 bg-md-surface-container-high text-md-on-surface rounded-2xl shadow-md-3 border border-emerald-500/30 text-xs animate-in slide-in-from-bottom duration-200"
         >
-          <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-google-green flex items-center justify-center shrink-0">
+          <div className="w-6 h-6 rounded-full bg-[#e6f4ea] text-google-green flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div className="flex-1">
