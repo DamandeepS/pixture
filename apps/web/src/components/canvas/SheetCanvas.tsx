@@ -497,83 +497,93 @@ export function SheetCanvas() {
                   )}
 
                   {/* Filled Slot Photo Rendering */}
-                  {photo && adj && (
-                    <div className="w-full h-full relative overflow-hidden flex items-center justify-center">
-                      <div
-                        className="relative overflow-hidden w-full h-full flex items-center justify-center"
-                        style={{
-                          padding: adj.isPolaroid
-                            ? `${5 * pxPerMm}px ${5 * pxPerMm}px ${20 * pxPerMm}px ${5 * pxPerMm}px`
-                            : adj.hasWhiteBorder
-                              ? `${adj.whiteBorderWidthMm * pxPerMm}px`
-                              : 0,
-                          backgroundColor: '#ffffff',
-                        }}
-                      >
-                        <img
-                          src={photo.dataUrl}
-                          alt={photo.name}
-                          className="max-w-none pointer-events-none select-none transition-transform"
+                  {photo && adj && (() => {
+                    const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
+                    const rotScale = isRotated90
+                      ? (adj.fitMode === 'contain'
+                          ? Math.min(slotW / slotH, slotH / slotW)
+                          : Math.max(slotW / slotH, slotH / slotW))
+                      : 1;
+                    const effectiveZoom = adj.zoom * rotScale;
+
+                    return (
+                      <div className="w-full h-full relative overflow-hidden flex items-center justify-center">
+                        <div
+                          className="relative overflow-hidden w-full h-full flex items-center justify-center"
                           style={{
-                            width: adj.fitMode === 'contain' ? '100%' : `${100 * adj.zoom}%`,
-                            height: adj.fitMode === 'contain' ? '100%' : `${100 * adj.zoom}%`,
-                            objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
-                            objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
-                            transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
-                            filter: buildCssFilterString(adj),
+                            padding: adj.isPolaroid
+                              ? `${5 * pxPerMm}px ${5 * pxPerMm}px ${20 * pxPerMm}px ${5 * pxPerMm}px`
+                              : adj.hasWhiteBorder
+                                ? `${adj.whiteBorderWidthMm * pxPerMm}px`
+                                : 0,
+                            backgroundColor: '#ffffff',
                           }}
-                        />
+                        >
+                          <img
+                            src={photo.dataUrl}
+                            alt={photo.name}
+                            className="max-w-none pointer-events-none select-none transition-transform"
+                            style={{
+                              width: adj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
+                              height: adj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
+                              objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
+                              objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
+                              transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,
+                              filter: buildCssFilterString(adj),
+                            }}
+                          />
 
-                        {adj.isPolaroid && adj.polaroidCaption && (
-                          <div
-                            className="absolute bottom-1 w-full text-center font-caveat text-md-on-surface truncate px-1"
-                            style={{ fontSize: `${Math.max(10, 3.5 * pxPerMm)}px` }}
+                          {adj.isPolaroid && adj.polaroidCaption && (
+                            <div
+                              className="absolute bottom-1 w-full text-center font-caveat text-md-on-surface truncate px-1"
+                              style={{ fontSize: `${Math.max(10, 3.5 * pxPerMm)}px` }}
+                            >
+                              {adj.polaroidCaption}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Hover / Selected Overlay Toolbar */}
+                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center gap-1 bg-black/75 backdrop-blur-sm p-1 rounded-md-full text-white transition-opacity z-20">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedSlotIndex(slotGeom.index);
+                              setIsCropModalOpen(true);
+                            }}
+                            className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
+                            title={t('cropAndAdjust')}
+                            aria-label={t('cropAndAdjust')}
                           >
-                            {adj.polaroidCaption}
-                          </div>
-                        )}
+                            <Crop className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const nextRot = ((adj.rotation + 90) % 360);
+                              updateSlotAdjustments(slotGeom.index, { rotation: nextRot });
+                            }}
+                            className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
+                            title={t('rotate90')}
+                            aria-label={t('rotate90')}
+                          >
+                            <RotateCw className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              assignPhotoToSlot(slotGeom.index, null);
+                            }}
+                            className="p-1 hover:bg-white/20 rounded-md-full text-google-red transition-colors"
+                            title={t('removePhoto')}
+                            aria-label={t('removePhoto')}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-
-                      {/* Hover / Selected Overlay Toolbar */}
-                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center gap-1 bg-black/75 backdrop-blur-sm p-1 rounded-md-full text-white transition-opacity z-20">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedSlotIndex(slotGeom.index);
-                            setIsCropModalOpen(true);
-                          }}
-                          className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
-                          title={t('cropAndAdjust')}
-                          aria-label={t('cropAndAdjust')}
-                        >
-                          <Crop className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const nextRot = ((adj.rotation + 90) % 360);
-                            updateSlotAdjustments(slotGeom.index, { rotation: nextRot });
-                          }}
-                          className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
-                          title={t('rotate90')}
-                          aria-label={t('rotate90')}
-                        >
-                          <RotateCw className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            assignPhotoToSlot(slotGeom.index, null);
-                          }}
-                          className="p-1 hover:bg-white/20 rounded-md-full text-google-red transition-colors"
-                          title={t('removePhoto')}
-                          aria-label={t('removePhoto')}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               );
             })}

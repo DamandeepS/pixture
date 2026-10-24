@@ -138,6 +138,14 @@ export function PrintContainer() {
 
             if (!photo || !adj) return null;
 
+            const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
+            const rotScale = isRotated90
+              ? (adj.fitMode === 'contain'
+                  ? Math.min(slotGeom.widthMm / slotGeom.heightMm, slotGeom.heightMm / slotGeom.widthMm)
+                  : Math.max(slotGeom.widthMm / slotGeom.heightMm, slotGeom.heightMm / slotGeom.widthMm))
+              : 1;
+            const effectiveZoom = adj.zoom * rotScale;
+
             return (
               <div
                 key={slotGeom.index}
@@ -164,8 +172,8 @@ export function PrintContainer() {
                     alt={photo.name}
                     className="max-w-none select-none"
                     style={{
-                      width: adj.fitMode === 'contain' ? '100%' : `${100 * adj.zoom}%`,
-                      height: adj.fitMode === 'contain' ? '100%' : `${100 * adj.zoom}%`,
+                      width: adj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
+                      height: adj.fitMode === 'contain' && !isRotated90 ? '100%' : `${100 * effectiveZoom}%`,
                       objectFit: adj.fitMode === 'contain' ? 'contain' : 'cover',
                       objectPosition: `${adj.cropX * 100}% ${adj.cropY * 100}%`,
                       transform: `rotate(${adj.rotation}deg) scale(${adj.flipH ? -1 : 1}, ${adj.flipV ? -1 : 1})`,

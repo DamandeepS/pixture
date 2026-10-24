@@ -119,29 +119,32 @@ export function drawPhotoToContext(
     ctx.scale(scaleX, scaleY);
   }
 
-  // Compute scale based on fitMode (cover vs contain) and zoom
+  // When rotated 90 or 270 degrees, the destination dimensions in the image's local space swap
   const imgAspect = img.naturalWidth / img.naturalHeight;
-  const slotAspect = innerW / innerH;
+  const isRotated90 = adj.rotation === 90 || adj.rotation === 270;
+  const targetW = isRotated90 ? innerH : innerW;
+  const targetH = isRotated90 ? innerW : innerH;
+  const slotAspect = targetW / targetH;
 
   let drawW: number;
   let drawH: number;
 
   if (adj.fitMode === 'contain') {
     if (imgAspect > slotAspect) {
-      drawW = innerW;
-      drawH = innerW / imgAspect;
+      drawW = targetW;
+      drawH = targetW / imgAspect;
     } else {
-      drawH = innerH;
-      drawW = innerH * imgAspect;
+      drawH = targetH;
+      drawW = targetH * imgAspect;
     }
   } else {
     // Cover mode
     if (imgAspect > slotAspect) {
-      drawH = innerH;
-      drawW = innerH * imgAspect;
+      drawH = targetH;
+      drawW = targetH * imgAspect;
     } else {
-      drawW = innerW;
-      drawH = innerW / imgAspect;
+      drawW = targetW;
+      drawH = targetW / imgAspect;
     }
   }
 
@@ -150,8 +153,8 @@ export function drawPhotoToContext(
   drawH *= adj.zoom;
 
   // Pan offsets: (adj.cropX - 0.5) shifts within the excess dimension
-  const excessX = Math.max(0, drawW - innerW);
-  const excessY = Math.max(0, drawH - innerH);
+  const excessX = Math.max(0, drawW - targetW);
+  const excessY = Math.max(0, drawH - targetH);
   const panOffsetX = (adj.cropX - 0.5) * -excessX * 2;
   const panOffsetY = (adj.cropY - 0.5) * -excessY * 2;
 
