@@ -100,30 +100,39 @@ export async function renderSheetToCanvas(options: RenderSheetOptions): Promise<
     }
   }
 
-  // 3. Draw Cut Marks
+  // 3. Draw Cut Marks (ONLY for filled photo slots)
   if (config.cutMarkStyle !== 'none') {
-    const cutMarks = generateCutMarks({
-      slots: slotsGeometry,
-      style: config.cutMarkStyle as CutMarkStyle,
-      bleedMm: config.bleedMm,
+    const filledSlotsGeometry = slotsGeometry.filter((_, idx) => {
+      const assignment = page.slots.find((s) => s.slotIndex === idx);
+      return assignment && assignment.photoId;
     });
 
-    ctx.save();
-    ctx.strokeStyle = config.cutMarkColor || '#202124';
-    ctx.lineWidth = Math.max(1, Math.round(0.15 * pxPerMm)); // ~0.5pt hairline in print
+    if (filledSlotsGeometry.length > 0) {
+      const cutMarks = generateCutMarks({
+        slots: filledSlotsGeometry,
+        style: config.cutMarkStyle as CutMarkStyle,
+        bleedMm: config.bleedMm,
+        markLengthMm: 2.0,
+        markOffsetMm: 0.5,
+      });
 
-    for (const line of cutMarks.lines) {
-      ctx.beginPath();
-      if (line.style === 'dashed') {
-        ctx.setLineDash([Math.round(2 * pxPerMm), Math.round(2 * pxPerMm)]);
-      } else {
-        ctx.setLineDash([]);
+      ctx.save();
+      ctx.strokeStyle = config.cutMarkColor || '#5f6368';
+      ctx.lineWidth = Math.max(1, Math.round(0.12 * pxPerMm)); // Crisp hairline in print
+
+      for (const line of cutMarks.lines) {
+        ctx.beginPath();
+        if (line.style === 'dashed') {
+          ctx.setLineDash([Math.round(2 * pxPerMm), Math.round(2 * pxPerMm)]);
+        } else {
+          ctx.setLineDash([]);
+        }
+        ctx.moveTo(Math.round(line.x1Mm * pxPerMm), Math.round(line.y1Mm * pxPerMm));
+        ctx.lineTo(Math.round(line.x2Mm * pxPerMm), Math.round(line.y2Mm * pxPerMm));
+        ctx.stroke();
       }
-      ctx.moveTo(Math.round(line.x1Mm * pxPerMm), Math.round(line.y1Mm * pxPerMm));
-      ctx.lineTo(Math.round(line.x2Mm * pxPerMm), Math.round(line.y2Mm * pxPerMm));
-      ctx.stroke();
+      ctx.restore();
     }
-    ctx.restore();
   }
 
   return canvas;

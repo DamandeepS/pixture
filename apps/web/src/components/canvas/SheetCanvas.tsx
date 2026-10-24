@@ -146,18 +146,22 @@ export function SheetCanvas() {
   const sheetPixelW = paperDim.widthMm * pxPerMm;
   const sheetPixelH = paperDim.heightMm * pxPerMm;
 
-  // Cut marks lines
+  const currentPage = pages[currentPageIndex] || pages[0];
+
+  // Cut marks lines (only for filled slots with assigned photos!)
   const cutMarks = useMemo(() => {
+    const filledSlots = slotsGeometry.filter(
+      (slotGeom) => currentPage?.slots.some((s) => s.slotIndex === slotGeom.index && s.photoId)
+    );
+
     return generateCutMarks({
-      slots: slotsGeometry,
+      slots: filledSlots,
       style: config.cutMarkStyle as CutMarkStyle,
       bleedMm: config.bleedMm,
       markLengthMm: 2.0,
       markOffsetMm: 0.5,
     });
-  }, [slotsGeometry, config.cutMarkStyle, config.bleedMm]);
-
-  const currentPage = pages[currentPageIndex] || pages[0];
+  }, [slotsGeometry, currentPage?.slots, config.cutMarkStyle, config.bleedMm]);
 
   // Drag and drop handlers
   const handleSlotDragOver = (e: React.DragEvent, slotIdx: number) => {

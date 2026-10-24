@@ -86,49 +86,57 @@ export function PrintContainer() {
     }));
   }, [config, paperDim, photos]);
 
-  const cutMarks = useMemo(() => {
-    return generateCutMarks({
-      slots: slotsGeometry,
-      style: config.cutMarkStyle as CutMarkStyle,
-      bleedMm: config.bleedMm,
-    });
-  }, [slotsGeometry, config.cutMarkStyle, config.bleedMm]);
-
   return createPortal(
     <div>
-      {pages.map((page) => (
-        <div
-          key={page.id}
-          className="print-page relative bg-white overflow-hidden"
-          style={{
-            width: `${paperDim.widthMm}mm`,
-            height: `${paperDim.heightMm}mm`,
-          }}
-        >
-          {/* Vector Cut Marks in print */}
-          {config.cutMarkStyle !== 'none' && (
-            <svg
-              className="absolute inset-0 pointer-events-none z-10"
-              style={{
-                width: `${paperDim.widthMm}mm`,
-                height: `${paperDim.heightMm}mm`,
-              }}
-              viewBox={`0 0 ${paperDim.widthMm} ${paperDim.heightMm}`}
-            >
-              {cutMarks.lines.map((line, idx) => (
-                <line
-                  key={idx}
-                  x1={line.x1Mm}
-                  y1={line.y1Mm}
-                  x2={line.x2Mm}
-                  y2={line.y2Mm}
-                  stroke={config.cutMarkColor || '#202124'}
-                  strokeWidth="0.15"
-                  strokeDasharray={line.style === 'dashed' ? '1,1' : undefined}
-                />
-              ))}
-            </svg>
-          )}
+      {pages.map((page) => {
+        // Only generate cut marks for slots on this page that actually have a photo assigned
+        const filledSlots = slotsGeometry.filter(
+          (slotGeom) => page.slots.some((s) => s.slotIndex === slotGeom.index && s.photoId)
+        );
+
+        const pageCutMarks = filledSlots.length > 0 && config.cutMarkStyle !== 'none'
+          ? generateCutMarks({
+              slots: filledSlots,
+              style: config.cutMarkStyle as CutMarkStyle,
+              bleedMm: config.bleedMm,
+              markLengthMm: 2.0,
+              markOffsetMm: 0.5,
+            })
+          : null;
+
+        return (
+          <div
+            key={page.id}
+            className="print-page relative bg-white overflow-hidden"
+            style={{
+              width: `${paperDim.widthMm}mm`,
+              height: `${paperDim.heightMm}mm`,
+            }}
+          >
+            {/* Vector Cut Marks in print (ONLY for filled photo slots) */}
+            {pageCutMarks && pageCutMarks.lines.length > 0 && (
+              <svg
+                className="absolute inset-0 pointer-events-none z-10"
+                style={{
+                  width: `${paperDim.widthMm}mm`,
+                  height: `${paperDim.heightMm}mm`,
+                }}
+                viewBox={`0 0 ${paperDim.widthMm} ${paperDim.heightMm}`}
+              >
+                {pageCutMarks.lines.map((line, idx) => (
+                  <line
+                    key={idx}
+                    x1={line.x1Mm}
+                    y1={line.y1Mm}
+                    x2={line.x2Mm}
+                    y2={line.y2Mm}
+                    stroke={config.cutMarkColor || '#5f6368'}
+                    strokeWidth="0.15"
+                    strokeDasharray={line.style === 'dashed' ? '1,1' : undefined}
+                  />
+                ))}
+              </svg>
+            )}
 
           {/* Slots & Photos */}
           {slotsGeometry.map((slotGeom) => {
@@ -193,8 +201,9 @@ export function PrintContainer() {
             );
           })}
         </div>
-      ))}
-    </div>,
+      );
+    })}
+  </div>,
     printRoot
   );
 }

@@ -63,34 +63,43 @@ export async function exportProjectToPdf(options: ExportPdfOptions): Promise<Uin
       height: pageH_pt,
     });
 
-    // Draw vector cut marks on top if enabled for razor-sharp vector precision
+    // Draw vector cut marks on top if enabled (ONLY for filled photo slots)
     if (config.cutMarkStyle !== 'none') {
-      const cutMarks = generateCutMarks({
-        slots: slotsGeometry,
-        style: config.cutMarkStyle as CutMarkStyle,
-        bleedMm: config.bleedMm,
+      const filledSlotsGeometry = slotsGeometry.filter((_, idx) => {
+        const assignment = page.slots.find((s) => s.slotIndex === idx);
+        return assignment && assignment.photoId;
       });
 
-      // Parse cut mark color
-      const colorHex = config.cutMarkColor || '#202124';
-      const r = parseInt(colorHex.slice(1, 3), 16) / 255 || 0.1;
-      const g = parseInt(colorHex.slice(3, 5), 16) / 255 || 0.1;
-      const b = parseInt(colorHex.slice(5, 7), 16) / 255 || 0.1;
-      const lineColor = rgb(r, g, b);
-
-      for (const line of cutMarks.lines) {
-        // PDF coordinates start at bottom-left, so invert Y
-        const x1 = line.x1Mm * PT_PER_MM;
-        const y1 = pageH_pt - line.y1Mm * PT_PER_MM;
-        const x2 = line.x2Mm * PT_PER_MM;
-        const y2 = pageH_pt - line.y2Mm * PT_PER_MM;
-
-        pdfPage.drawLine({
-          start: { x: x1, y: y1 },
-          end: { x: x2, y: y2 },
-          thickness: 0.5, // 0.5 pt hairline
-          color: lineColor,
+      if (filledSlotsGeometry.length > 0) {
+        const cutMarks = generateCutMarks({
+          slots: filledSlotsGeometry,
+          style: config.cutMarkStyle as CutMarkStyle,
+          bleedMm: config.bleedMm,
+          markLengthMm: 2.0,
+          markOffsetMm: 0.5,
         });
+
+        // Parse cut mark color
+        const colorHex = config.cutMarkColor || '#5f6368';
+        const r = parseInt(colorHex.slice(1, 3), 16) / 255 || 0.3;
+        const g = parseInt(colorHex.slice(3, 5), 16) / 255 || 0.3;
+        const b = parseInt(colorHex.slice(5, 7), 16) / 255 || 0.3;
+        const lineColor = rgb(r, g, b);
+
+        for (const line of cutMarks.lines) {
+          // PDF coordinates start at bottom-left, so invert Y
+          const x1 = line.x1Mm * PT_PER_MM;
+          const y1 = pageH_pt - line.y1Mm * PT_PER_MM;
+          const x2 = line.x2Mm * PT_PER_MM;
+          const y2 = pageH_pt - line.y2Mm * PT_PER_MM;
+
+          pdfPage.drawLine({
+            start: { x: x1, y: y1 },
+            end: { x: x2, y: y2 },
+            thickness: 0.5, // 0.5 pt hairline
+            color: lineColor,
+          });
+        }
       }
     }
 
