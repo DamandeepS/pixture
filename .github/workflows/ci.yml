@@ -1,4 +1,4 @@
-name: Quality Gates & CI
+name: CI Pipeline
 
 on:
   push:
@@ -11,15 +11,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  quality-gates:
-    name: Lint, Test & Build
+  lint-and-format:
+    name: Lint & Code Style
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Set up Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -28,17 +28,79 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Verify Code Formatting (Prettier)
+      - name: Prettier Code Style Check
         run: npm run format:check
 
-      - name: Run Blazing-Fast Linter (Oxlint)
+      - name: Oxlint Linter Check (Zero Warnings Tolerance)
         run: npm run lint
 
-      - name: Type Check (TypeScript)
+  typecheck:
+    name: Type Check (TypeScript)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Workspace Type Checks
         run: npm run typecheck
 
-      - name: Run Unit Tests (Vitest)
+  test:
+    name: Test Suite (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Vitest Unit Tests
         run: npm run test
+
+  build:
+    name: Build & Package Artifacts
+    runs-on: ubuntu-latest
+    needs: [lint-and-format, typecheck, test]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
 
       - name: Production Build (Turborepo + Vite)
         run: npm run build
+
+      - name: Upload Web Application Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pixture-web-dist
+          path: apps/web/dist
+          retention-days: 14
