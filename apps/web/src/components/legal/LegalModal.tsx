@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   ShieldCheck,
   Scale,
@@ -52,24 +53,24 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
 
   if (!isOpen) return null;
 
-  return (
-    <dialog
-      open
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent w-full h-full max-w-none max-h-none m-0 border-none animate-fade-in"
+  return createPortal(
+    <div
+      role="dialog"
       aria-modal="true"
       aria-labelledby="legal-dialog-title"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
     >
-      {/* Backdrop overlay */}
+      {/* Backdrop overlay button */}
       <button
         type="button"
         onClick={onClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-default"
+        className="fixed inset-0 bg-transparent cursor-default border-none -z-10"
         aria-label={t('close')}
         tabIndex={-1}
       />
 
       {/* Modal card container */}
-      <div className="relative w-full max-w-3xl max-h-[88vh] flex flex-col bg-md-surface rounded-2xl shadow-md-3 border border-md-outline-variant overflow-hidden z-10">
+      <div className="relative w-full max-w-3xl max-h-[88vh] flex flex-col bg-md-surface rounded-2xl shadow-2xl border border-md-outline-variant overflow-hidden z-10">
         {/* Header with Title and Close Button */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-md-outline-variant bg-md-surface-container-low">
           <div className="flex items-center gap-3">
@@ -444,6 +445,7 @@ SOFTWARE.`}
           </button>
         </div>
       </div>
-    </dialog>
+    </div>,
+    document.body
   );
 }

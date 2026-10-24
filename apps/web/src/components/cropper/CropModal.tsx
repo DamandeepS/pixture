@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   RotateCw,
@@ -137,18 +138,18 @@ export function CropModal() {
     : 1;
   const effectiveZoom = localAdj.zoom * rotScale;
 
-  return (
-    <dialog
-      open
+  return createPortal(
+    <div
+      role="dialog"
       aria-modal="true"
       aria-labelledby="crop-dialog-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-transparent w-full h-full max-w-none max-h-none m-0 border-none select-none animate-in fade-in duration-150"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm select-none animate-in fade-in duration-150"
     >
       {/* Backdrop overlay */}
       <button
         type="button"
         onClick={handleClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-default"
+        className="fixed inset-0 bg-transparent cursor-default border-none -z-10"
         aria-label="Close modal"
         tabIndex={-1}
       />
@@ -411,6 +412,7 @@ export function CropModal() {
           </button>
         </div>
       </div>
-    </dialog>
+    </div>,
+    document.body
   );
 }
