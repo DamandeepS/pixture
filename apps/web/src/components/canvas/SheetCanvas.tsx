@@ -151,6 +151,7 @@ export function SheetCanvas() {
 
   const handleSlotDrop = (e: React.DragEvent, slotIdx: number) => {
     e.preventDefault();
+    e.stopPropagation();
     setDragOverSlotIndex(null);
 
     // 1. Files dragged from desktop / Finder

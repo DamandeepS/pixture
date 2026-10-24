@@ -37,6 +37,7 @@ export function FilmstripTray() {
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragOver(false);
     handleFiles(e.dataTransfer.files);
   };
@@ -65,7 +66,7 @@ export function FilmstripTray() {
           {t('addPhotos')}
         </span>
         <span className="text-[10px] text-md-on-surface-variant text-center opacity-70">
-          PNG, JPG, WebP
+          Drop or Paste (⌘V)
         </span>
         <input
           ref={fileInputRef}
