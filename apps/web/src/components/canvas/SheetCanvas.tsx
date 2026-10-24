@@ -341,7 +341,7 @@ export function SheetCanvas() {
         {/* Horizontal Top Ruler */}
         <div className="flex">
           {/* Top-left corner box */}
-          <div className="w-6 h-6 bg-md-surface-container border-b border-r border-md-outline-variant flex items-center justify-center text-[8px] font-mono font-bold text-md-on-surface-variant">
+          <div className="w-8 h-6 bg-md-surface-container border-b border-r border-md-outline-variant flex items-center justify-center text-[8px] font-mono font-bold text-md-on-surface-variant shrink-0">
             {activeUnit}
           </div>
           <Ruler

@@ -10,21 +10,28 @@ interface RulerProps {
 export function Ruler({ orientation, lengthMm, scalePxPerMm, unit }: RulerProps) {
   const isH = orientation === 'horizontal';
 
-  // Major tick spacing based on unit
-  // In mm: major tick every 10mm (1cm)
-  // In cm: major tick every 1cm
-  // In in: major tick every 1in (25.4mm)
+  // Dynamically select major step based on scalePxPerMm so numbers never crowd or overlap
   let stepMm = 10;
   if (unit === 'in') {
-    stepMm = 25.4;
+    const candidateInches = [1, 2, 5];
+    const chosen = candidateInches.find((inc) => inc * 25.4 * scalePxPerMm >= 24) ?? 5;
+    stepMm = chosen * 25.4;
+  } else {
+    // For mm and cm
+    const candidateUnits = unit === 'cm' ? [1, 2, 5, 10] : [10, 20, 50, 100];
+    const candidateMm = unit === 'cm' ? candidateUnits.map((u) => u * 10) : candidateUnits;
+    const chosenIdx = candidateMm.findIndex((mm) => mm * scalePxPerMm >= 20);
+    stepMm = chosenIdx !== -1 ? candidateMm[chosenIdx] : candidateMm[candidateMm.length - 1];
   }
 
+  const halfStep = stepMm / 2;
+  const totalSteps = Math.floor(lengthMm / halfStep);
   const ticks: Array<{ posPx: number; label: string; isMajor: boolean }> = [];
-  const maxPos = lengthMm;
 
-  for (let mm = 0; mm <= maxPos; mm += stepMm / 2) {
-    const isMajor = Math.abs(mm % stepMm) < 0.1 || Math.abs((mm % stepMm) - stepMm) < 0.1;
-    const posPx = mm * scalePxPerMm;
+  for (let i = 0; i <= totalSteps; i++) {
+    const mm = i * halfStep;
+    const isMajor = i % 2 === 0;
+    const posPx = Math.round(mm * scalePxPerMm * 10) / 10;
     const convertedVal = convertUnits(mm, 'mm', unit);
     const label = isMajor ? String(Math.round(convertedVal)) : '';
 
@@ -38,52 +45,90 @@ export function Ruler({ orientation, lengthMm, scalePxPerMm, unit }: RulerProps)
   if (isH) {
     return (
       <div
-        className="h-6 relative bg-md-surface border-b border-md-outline-variant select-none overflow-hidden"
+        className="h-6 relative bg-md-surface border-b border-md-outline-variant select-none overflow-hidden shrink-0"
         style={{ width: `${lengthMm * scalePxPerMm}px` }}
         aria-hidden="true"
       >
-        {ticks.map((t, idx) => (
-          <div
-            key={idx}
-            className="absolute bottom-0 flex flex-col items-center"
-            style={{ left: `${t.posPx}px` }}
-          >
+        {ticks.map((t, idx) => {
+          const isFirst = idx === 0;
+          const isLast = t.posPx >= lengthMm * scalePxPerMm - 10;
+
+          return (
             <div
-              className={`w-[1px] bg-md-outline ${t.isMajor ? 'h-3' : 'h-1.5 opacity-60'}`}
-            ></div>
-            {t.isMajor && (
-              <span className="text-[9px] font-mono text-md-on-surface-variant absolute -top-4 -translate-x-1/2">
-                {t.label}
-              </span>
-            )}
-          </div>
-        ))}
+              key={idx}
+              className="absolute bottom-0 flex flex-col items-center justify-end"
+              style={{
+                left: `${t.posPx}px`,
+                height: '100%',
+                width: 0,
+              }}
+            >
+              {t.isMajor && t.label && (
+                <span
+                  className={`text-[8px] font-mono text-md-on-surface-variant absolute bottom-[7px] leading-none select-none ${
+                    isFirst
+                      ? 'left-[2px] translate-x-0'
+                      : isLast
+                      ? 'right-[2px] -translate-x-full'
+                      : 'left-0 -translate-x-1/2'
+                  }`}
+                >
+                  {t.label}
+                </span>
+              )}
+              <div
+                className={`bg-md-outline shrink-0 ${
+                  t.isMajor ? 'h-[5px] w-[1px]' : 'h-[2.5px] w-[1px] opacity-50'
+                }`}
+              />
+            </div>
+          );
+        })}
       </div>
     );
   }
 
   return (
     <div
-      className="w-6 relative bg-md-surface border-r border-md-outline-variant select-none overflow-hidden shrink-0"
+      className="w-8 relative bg-md-surface border-r border-md-outline-variant select-none overflow-hidden shrink-0"
       style={{ height: `${lengthMm * scalePxPerMm}px` }}
       aria-hidden="true"
     >
-      {ticks.map((t, idx) => (
-        <div
-          key={idx}
-          className="absolute right-0 flex items-center"
-          style={{ top: `${t.posPx}px` }}
-        >
+      {ticks.map((t, idx) => {
+        const isFirst = idx === 0;
+        const isLast = t.posPx >= lengthMm * scalePxPerMm - 8;
+
+        return (
           <div
-            className={`h-[1px] bg-md-outline ${t.isMajor ? 'w-3' : 'w-1.5 opacity-60'}`}
-          ></div>
-          {t.isMajor && (
-            <span className="text-[9px] font-mono text-md-on-surface-variant absolute -left-4 -translate-y-1/2">
-              {t.label}
-            </span>
-          )}
-        </div>
-      ))}
+            key={idx}
+            className="absolute right-0 flex items-center justify-end"
+            style={{
+              top: `${t.posPx}px`,
+              width: '100%',
+              height: 0,
+            }}
+          >
+            {t.isMajor && t.label && (
+              <span
+                className={`text-[8px] font-mono text-md-on-surface-variant absolute right-[7px] leading-none select-none text-right ${
+                  isFirst
+                    ? 'top-[2px] translate-y-0'
+                    : isLast
+                    ? 'top-0 -translate-y-full'
+                    : 'top-0 -translate-y-1/2'
+                }`}
+              >
+                {t.label}
+              </span>
+            )}
+            <div
+              className={`bg-md-outline shrink-0 ${
+                t.isMajor ? 'w-[5px] h-[1px]' : 'w-[2.5px] h-[1px] opacity-50'
+              }`}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
