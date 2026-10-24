@@ -9,6 +9,8 @@ import {
   Trash2,
   Crop,
   RotateCw,
+  Copy,
+  CopyCheck,
   Scissors,
   Sparkles,
 } from 'lucide-react';
@@ -36,6 +38,8 @@ export function SheetCanvas() {
     setIsCropModalOpen,
     assignPhotoToSlot,
     updateSlotAdjustments,
+    duplicateSlotPhoto,
+    duplicateSlotPhotoToAll,
     addUploadedPhotos,
     loadSamplePhotos,
     addNewPage,
@@ -441,6 +445,11 @@ export function SheetCanvas() {
                         e.preventDefault();
                         assignPhotoToSlot(slotGeom.index, null);
                       }
+                    } else if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) {
+                      if (photo) {
+                        e.preventDefault();
+                        duplicateSlotPhoto(slotGeom.index);
+                      }
                     }
                   }}
                   onDragOver={(e) => handleSlotDragOver(e, slotGeom.index)}
@@ -621,8 +630,15 @@ export function SheetCanvas() {
                           )}
 
                           {/* Hover / Selected Overlay Toolbar */}
-                          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center gap-1 bg-black/75 backdrop-blur-sm p-1 rounded-md-full text-white transition-opacity z-20">
+                          <div
+                            className={`absolute top-1 right-1 flex items-center gap-1 bg-black/80 backdrop-blur-sm p-1 rounded-md-full text-white transition-opacity z-20 shadow-md-2 ${
+                              isSelected
+                                ? 'opacity-100'
+                                : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+                            }`}
+                          >
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedSlotIndex(slotGeom.index);
@@ -635,6 +651,31 @@ export function SheetCanvas() {
                               <Crop className="w-3.5 h-3.5" />
                             </button>
                             <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                duplicateSlotPhoto(slotGeom.index);
+                              }}
+                              className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
+                              title={`${t('duplicateToNext')} (⌘D)`}
+                              aria-label={t('duplicateToNext')}
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                duplicateSlotPhotoToAll(slotGeom.index);
+                              }}
+                              className="p-1 hover:bg-white/20 rounded-md-full transition-colors"
+                              title={t('duplicateToAll')}
+                              aria-label={t('duplicateToAll')}
+                            >
+                              <CopyCheck className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const nextRot = (adj.rotation + 90) % 360;
@@ -646,7 +687,9 @@ export function SheetCanvas() {
                             >
                               <RotateCw className="w-3.5 h-3.5" />
                             </button>
+                            <div className="w-[1px] h-3 bg-white/30" />
                             <button
+                              type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 assignPhotoToSlot(slotGeom.index, null);

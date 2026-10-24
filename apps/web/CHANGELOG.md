@@ -1,5 +1,13 @@
 # web
 
+## 1.0.2
+
+### Patch Changes
+
+- Add photo duplication option preserving exact crop, zoom, rotation, and color adjustments. Includes "Duplicate to Next Slot" (Cmd+D / Ctrl+D), "Duplicate to All Slots", slot hover/selection action toolbar, and "Apply & Duplicate" in Crop & Adjust modal.
+- Updated dependencies
+  - @pixture/i18n@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes

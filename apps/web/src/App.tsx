@@ -18,6 +18,7 @@ function StudioWorkspace() {
     redo,
     setSelectedSlotIndex,
     selectedSlotIndex,
+    duplicateSlotPhoto,
     config,
     addUploadedPhotos,
     announce,
@@ -51,6 +52,11 @@ function StudioWorkspace() {
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'p') {
         e.preventDefault();
         triggerBrowserPrint(config);
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === 'd' || e.key === 'D')) {
+        if (selectedSlotIndex !== null) {
+          e.preventDefault();
+          duplicateSlotPhoto(selectedSlotIndex);
+        }
       } else if (e.key === 'Escape') {
         setSelectedSlotIndex(null);
       }
@@ -157,7 +163,16 @@ function StudioWorkspace() {
       window.removeEventListener('dragover', handleDragOver);
       window.removeEventListener('drop', handleDrop);
     };
-  }, [undo, redo, setSelectedSlotIndex, selectedSlotIndex, config, addUploadedPhotos, announce]);
+  }, [
+    undo,
+    redo,
+    setSelectedSlotIndex,
+    selectedSlotIndex,
+    duplicateSlotPhoto,
+    config,
+    addUploadedPhotos,
+    announce,
+  ]);
 
   return (
     <div className="h-screen w-screen flex flex-col bg-md-surface overflow-hidden">

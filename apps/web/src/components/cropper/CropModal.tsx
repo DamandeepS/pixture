@@ -7,6 +7,7 @@ import {
   FlipVertical,
   ZoomIn,
   Check,
+  Copy,
   RotateCcw,
   Sliders,
 } from 'lucide-react';
@@ -33,6 +34,7 @@ export function CropModal() {
     photos,
     currentPageIndex,
     updateSlotAdjustments,
+    duplicateSlotPhoto,
     config,
   } = useProject();
 
@@ -561,7 +563,7 @@ export function CropModal() {
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-md-surface-container border-t border-md-outline-variant shrink-0">
+        <div className="flex items-center justify-between gap-3 px-6 py-4 bg-md-surface-container border-t border-md-outline-variant shrink-0">
           <button
             type="button"
             onClick={handleClose}
@@ -570,14 +572,32 @@ export function CropModal() {
             {t('cancel')}
           </button>
 
-          <button
-            type="button"
-            onClick={handleApply}
-            className="flex items-center gap-1.5 px-5 py-2 rounded-md-full bg-md-primary hover:bg-[#1557b0] text-xs font-semibold text-white shadow-md-1 hover:shadow-md-2 transition-all"
-          >
-            <Check className="w-4 h-4" />
-            <span>{t('apply')}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (selectedSlotIndex !== null) {
+                  updateSlotAdjustments(selectedSlotIndex, localAdj);
+                  duplicateSlotPhoto(selectedSlotIndex);
+                }
+                handleClose();
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-md-full border border-md-primary/40 hover:border-md-primary text-md-primary hover:bg-md-primary-container/30 text-xs font-semibold transition-colors"
+              title={t('applyAndDuplicate')}
+            >
+              <Copy className="w-4 h-4" />
+              <span>{t('applyAndDuplicate')}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleApply}
+              className="flex items-center gap-1.5 px-5 py-2 rounded-md-full bg-md-primary hover:bg-[#1557b0] text-xs font-semibold text-white shadow-md-1 hover:shadow-md-2 transition-all"
+            >
+              <Check className="w-4 h-4" />
+              <span>{t('apply')}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>,

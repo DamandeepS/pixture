@@ -41,6 +41,8 @@ interface ProjectContextValue extends ProjectState {
   removePhoto: (photoId: string) => void;
   assignPhotoToSlot: (slotIndex: number, photoId: string | null) => void;
   updateSlotAdjustments: (slotIndex: number, adjustments: Partial<PhotoSlotAdjustment>) => void;
+  duplicateSlotPhoto: (sourceSlotIndex?: number) => void;
+  duplicateSlotPhotoToAll: (sourceSlotIndex?: number) => void;
   fillPageWithPhoto: (photoId: string) => void;
   autoPackAllPhotos: () => void;
   addNewPage: () => void;
@@ -451,6 +453,191 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     [recordHistory]
   );
 
+  const duplicateSlotPhoto = useCallback(
+    (sourceSlotIndex?: number) => {
+      setState((prev) => {
+        const sourceIdx = sourceSlotIndex !== undefined ? sourceSlotIndex : prev.selectedSlotIndex;
+        if (sourceIdx === null) return prev;
+
+        const curPage = { ...prev.pages[prev.currentPageIndex] };
+        const sourceAssignment = curPage.slots.find((s) => s.slotIndex === sourceIdx);
+        if (!sourceAssignment || !sourceAssignment.photoId) return prev;
+
+        recordHistory(prev);
+
+        const photoId = sourceAssignment.photoId;
+        const adjustments: PhotoSlotAdjustment = { ...sourceAssignment.adjustments };
+
+        // Calculate total slots currently on this sheet layout
+        const paperDim = getPaperDimensions(
+          prev.config.paperId,
+          prev.config.orientation,
+          prev.config.customWidthMm,
+          prev.config.customHeightMm
+        );
+
+        const geomResult = computeSheetSlotsGeometry({
+          sheetWidthMm: paperDim.widthMm,
+          sheetHeightMm: paperDim.heightMm,
+          marginsMm: prev.config.marginsMm,
+          gapXMm: prev.config.gapXMm,
+          gapYMm: prev.config.gapYMm,
+          layoutMode: prev.config.layoutMode,
+          autoOrientation: prev.config.autoOrientation,
+          photoPresetId: prev.config.photoPresetId,
+          customPhotoWidthMm: prev.config.customPhotoWidthMm,
+          customPhotoHeightMm: prev.config.customPhotoHeightMm,
+          primaryPhotoCount: prev.config.primaryPhotoCount ?? 1,
+          secondaryPhotoPresetId: prev.config.secondaryPhotoPresetId ?? 'passport_us',
+          secondaryPhotoCount: prev.config.secondaryPhotoCount ?? 4,
+          customSecondaryWidthMm: prev.config.customSecondaryWidthMm,
+          customSecondaryHeightMm: prev.config.customSecondaryHeightMm,
+          currentPageIndex: prev.currentPageIndex,
+        });
+
+        const totalSlots = Math.max(1, geomResult.slots.length);
+
+        // Find the next empty slot on the current page starting after sourceIdx
+        let targetSlotIndex = -1;
+        for (let offset = 1; offset <= totalSlots; offset++) {
+          const candidateIdx = (sourceIdx + offset) % totalSlots;
+          const existing = curPage.slots.find((s) => s.slotIndex === candidateIdx);
+          if (!existing || !existing.photoId) {
+            targetSlotIndex = candidateIdx;
+            break;
+          }
+        }
+
+        // Case 1: Found an empty slot on the current page
+        if (targetSlotIndex !== -1) {
+          const curSlots = [...curPage.slots];
+          const existingTargetIdx = curSlots.findIndex((s) => s.slotIndex === targetSlotIndex);
+          if (existingTargetIdx !== -1) {
+            curSlots[existingTargetIdx] = {
+              slotIndex: targetSlotIndex,
+              photoId,
+              adjustments,
+            };
+          } else {
+            curSlots.push({
+              slotIndex: targetSlotIndex,
+              photoId,
+              adjustments,
+            });
+          }
+
+          const updatedPages = [...prev.pages];
+          updatedPages[prev.currentPageIndex] = { ...curPage, slots: curSlots };
+
+          return {
+            ...prev,
+            pages: updatedPages,
+            selectedSlotIndex: targetSlotIndex,
+            activePanelTab: 'inspector',
+            canUndo: true,
+            canRedo: false,
+            announcement: `Photo duplicated to Slot ${targetSlotIndex + 1} with exact crop and zoom.`,
+          };
+        }
+
+        // Case 2: All slots on the current page are full -> create a new page and place in slot 0
+        const newPageNumber = prev.pages.length + 1;
+        const newPage: SheetPage = {
+          id: `page_${Date.now()}`,
+          pageNumber: newPageNumber,
+          slots: [
+            {
+              slotIndex: 0,
+              photoId,
+              adjustments,
+            },
+          ],
+        };
+
+        const updatedPages = [...prev.pages, newPage];
+        const newPageIndex = updatedPages.length - 1;
+
+        return {
+          ...prev,
+          pages: updatedPages,
+          currentPageIndex: newPageIndex,
+          selectedSlotIndex: 0,
+          activePanelTab: 'inspector',
+          canUndo: true,
+          canRedo: false,
+          announcement: `All slots full on page. Added Page ${newPageNumber} and duplicated photo with exact framing.`,
+        };
+      });
+    },
+    [recordHistory]
+  );
+
+  const duplicateSlotPhotoToAll = useCallback(
+    (sourceSlotIndex?: number) => {
+      setState((prev) => {
+        const sourceIdx = sourceSlotIndex !== undefined ? sourceSlotIndex : prev.selectedSlotIndex;
+        if (sourceIdx === null) return prev;
+
+        const curPage = { ...prev.pages[prev.currentPageIndex] };
+        const sourceAssignment = curPage.slots.find((s) => s.slotIndex === sourceIdx);
+        if (!sourceAssignment || !sourceAssignment.photoId) return prev;
+
+        recordHistory(prev);
+
+        const photoId = sourceAssignment.photoId;
+        const adjustments: PhotoSlotAdjustment = { ...sourceAssignment.adjustments };
+
+        const paperDim = getPaperDimensions(
+          prev.config.paperId,
+          prev.config.orientation,
+          prev.config.customWidthMm,
+          prev.config.customHeightMm
+        );
+
+        const geomResult = computeSheetSlotsGeometry({
+          sheetWidthMm: paperDim.widthMm,
+          sheetHeightMm: paperDim.heightMm,
+          marginsMm: prev.config.marginsMm,
+          gapXMm: prev.config.gapXMm,
+          gapYMm: prev.config.gapYMm,
+          layoutMode: prev.config.layoutMode,
+          autoOrientation: prev.config.autoOrientation,
+          photoPresetId: prev.config.photoPresetId,
+          customPhotoWidthMm: prev.config.customPhotoWidthMm,
+          customPhotoHeightMm: prev.config.customPhotoHeightMm,
+          primaryPhotoCount: prev.config.primaryPhotoCount ?? 1,
+          secondaryPhotoPresetId: prev.config.secondaryPhotoPresetId ?? 'passport_us',
+          secondaryPhotoCount: prev.config.secondaryPhotoCount ?? 4,
+          customSecondaryWidthMm: prev.config.customSecondaryWidthMm,
+          customSecondaryHeightMm: prev.config.customSecondaryHeightMm,
+          currentPageIndex: prev.currentPageIndex,
+        });
+
+        const totalSlots = Math.max(1, geomResult.slots.length);
+        const newSlots: PageSlotAssignment[] = [];
+        for (let i = 0; i < totalSlots; i++) {
+          newSlots.push({
+            slotIndex: i,
+            photoId,
+            adjustments: { ...adjustments },
+          });
+        }
+
+        const updatedPages = [...prev.pages];
+        updatedPages[prev.currentPageIndex] = { ...curPage, slots: newSlots };
+
+        return {
+          ...prev,
+          pages: updatedPages,
+          canUndo: true,
+          canRedo: false,
+          announcement: `Duplicated photo across all ${totalSlots} slots with exact crop & zoom.`,
+        };
+      });
+    },
+    [recordHistory]
+  );
+
   const fillPageWithPhoto = useCallback(
     (photoId: string) => {
       setState((prev) => {
@@ -740,6 +927,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         removePhoto,
         assignPhotoToSlot,
         updateSlotAdjustments,
+        duplicateSlotPhoto,
+        duplicateSlotPhotoToAll,
         fillPageWithPhoto,
         autoPackAllPhotos,
         addNewPage,

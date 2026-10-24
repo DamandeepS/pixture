@@ -7,6 +7,7 @@ import {
   RotateCw,
   Trash2,
   Copy,
+  CopyCheck,
   Info,
   Upload,
   Plus,
@@ -37,6 +38,8 @@ export function ToolPanel() {
     setActivePanelTab: setActiveTab,
     assignPhotoToSlot,
     updateSlotAdjustments,
+    duplicateSlotPhoto,
+    duplicateSlotPhotoToAll,
     addUploadedPhotos,
     setIsCropModalOpen,
     activeUnit,
@@ -924,29 +927,41 @@ export function ToolPanel() {
                   </label>
                 </div>
 
-                {/* Slot Actions: Duplicate, Remove */}
-                <div className="flex items-center gap-2 pt-3 border-t border-md-outline-variant">
-                  <button
-                    onClick={() => {
-                      // Duplicate photo to next empty slot
-                      const nextSlotIdx = currentPage.slots.findIndex((s) => !s.photoId);
-                      if (nextSlotIdx !== -1) {
-                        assignPhotoToSlot(nextSlotIdx, selectedPhoto.id);
-                      }
-                    }}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md-md border border-md-outline-variant hover:bg-md-surface-container font-medium text-xs transition-colors"
-                  >
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>{t('duplicatePhoto')}</span>
-                  </button>
+                {/* Slot Actions: Duplicate, Duplicate to All, Remove */}
+                <div className="space-y-2 pt-3 border-t border-md-outline-variant">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => duplicateSlotPhoto(selectedSlotIndex)}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md-md bg-md-primary-container text-md-on-primary-container hover:bg-md-primary hover:text-white font-semibold text-xs transition-colors shadow-sm"
+                      title={`${t('duplicateToNext')} (⌘D)`}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      <span>{t('duplicateToNext')}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => assignPhotoToSlot(selectedSlotIndex, null)}
+                      className="p-2 rounded-md-md border border-md-error/30 text-md-error hover:bg-md-error-container transition-colors"
+                      title={t('removePhoto')}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
 
                   <button
-                    onClick={() => assignPhotoToSlot(selectedSlotIndex, null)}
-                    className="p-1.5 rounded-md-md border border-md-error/30 text-md-error hover:bg-md-error-container transition-colors"
-                    title={t('removePhoto')}
+                    type="button"
+                    onClick={() => duplicateSlotPhotoToAll(selectedSlotIndex)}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md-md border border-md-outline-variant hover:bg-md-surface-container font-medium text-xs text-md-on-surface transition-colors"
+                    title={t('duplicateToAll')}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <CopyCheck className="w-3.5 h-3.5 text-md-primary" />
+                    <span>{t('duplicateToAll')}</span>
                   </button>
+                  <p className="text-[10px] text-md-on-surface-variant text-center opacity-75">
+                    Copies exact crop, zoom, rotation & color adjustments
+                  </p>
                 </div>
               </div>
             )}
