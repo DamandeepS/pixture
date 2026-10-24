@@ -1,8 +1,12 @@
 # Pixture 🎨📸
 
-[![Quality Gates & CI](https://github.com/DamandeepS/pixture/actions/workflows/ci.yml/badge.svg)](https://github.com/DamandeepS/pixture/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/DamandeepS/pixture/actions/workflows/ci.yml/badge.svg)](https://github.com/DamandeepS/pixture/actions/workflows/ci.yml)
+[![Deploy to GitHub Pages](https://github.com/DamandeepS/pixture/actions/workflows/deploy.yml/badge.svg)](https://github.com/DamandeepS/pixture/actions/workflows/deploy.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-damandeeps.github.io%2Fpixture-brightgreen.svg)](https://damandeeps.github.io/pixture/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Privacy: 100% On-Device](https://img.shields.io/badge/Privacy-100%25%20On--Device-success.svg)](PRIVACY.md)
+
+**Live Web App:** [https://damandeeps.github.io/pixture/](https://damandeeps.github.io/pixture/)
 
 > Precision Photo Printing, Auto-Grid Layout, Cropping & Cut Markings with Google Material 3 Design.
 
