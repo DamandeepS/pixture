@@ -42,16 +42,26 @@ Pixture is a client-side photo printing and imposition layout web application bu
   - Fitting modes: Cover (edge bleed) vs Contain (letterbox).
   - Color adjustment sliders: Brightness, Contrast, Saturation, and 1-click Black & White toggle.
   - Border styles: Classic white photo border and Retro Polaroid style with custom handwritten captions.
+- **On-Device AI Background Removal & Plain Colors**:
+  - **100% Client-Side Neural Network**: In-browser foreground segmentation powered by `@imgly/background-removal` and ONNX Runtime WebAssembly (`onnxruntime-web`). Photos never leave your device.
+  - **Instant Solid Color Replacement**: Swap to plain background colors in under 10ms using offscreen canvas compositing over the cached cutout.
+  - **Official Passport & ID Swatches**: Transparent, Pure White (`#ffffff`), Off-White (`#f2f4f7`), Passport Blue (`#4a90e2`), Navy (`#0f2b5c`), Passport Red (`#d32f2f`), or any Custom Color via native picker.
+  - **Non-Destructive**: 1-click "Revert to Original" restores the source photo at any time.
 - **Print & Export**:
   - **Direct 100% Scale Browser Print** (`window.print()`): Injects exact `@page` CSS eliminating browser scaling distortions.
   - **300 DPI Print-Ready PDF**: Vector PDF with embedded high-resolution photos and vector hairline cut marks using `pdf-lib`.
   - **300 DPI PNG Export**: High-resolution raster download for commercial lab printing.
 - **Productivity & Persistence**:
+  - **Clipboard & Drag-and-Drop**: Paste images directly with `Cmd+V` / `Ctrl+V` or drag-and-drop onto the sheet canvas or tray.
+  - **Exact Photo Duplication**: 1-click duplicate retaining exact crop, zoom, rotation, and background state.
   - 1-Click "Fill Page" (e.g. duplicate 1 photo to fill all available slots on the sheet, ideal for passport/ID photos).
   - "Auto-Pack" all uploaded photos across multiple sheets.
   - Browser Auto-Save via IndexedDB (`idb-keyval`).
   - Project file export and import (`.pixture` JSON).
   - Full Undo / Redo history with keyboard shortcuts (`Ctrl+Z`, `Ctrl+Y`).
+- **Progressive Web App (PWA) & Offline**:
+  - Installable standalone desktop/mobile PWA taking versioning directly from `package.json`.
+  - Seamless service worker updates without hard refresh.
 - **Accessibility (A11Y) & Internationalization (i18n)**:
   - Multi-locale support: English, Spanish, French, German, Hindi, and Japanese.
   - ARIA live region announcements, keyboard navigable slots, high-contrast focus rings, skip-to-canvas link.

@@ -179,8 +179,9 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                   </div>
                   <h4 className="text-xs font-bold text-md-on-surface">100% Client-Side</h4>
                   <p className="text-[11px] leading-normal text-md-on-surface-variant">
-                    Photos are processed entirely within your browser memory using HTML5 Canvas and
-                    WebAssembly. No photos are ever uploaded to any server.
+                    Photos and AI background removals are processed entirely within your browser
+                    memory using HTML5 Canvas, WebAssembly, and local ONNX runtime. No photos are
+                    ever uploaded to any server.
                   </p>
                 </div>
 
@@ -212,10 +213,11 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                   Biometric Photos & Identity Documents
                 </h4>
                 <p className="text-xs">
-                  Pixture does not perform facial recognition, facial geometry extraction, or
-                  biometric scanning. Sensitive government documents such as passport and visa
-                  photographs remain strictly in local memory and are never transmitted over the
-                  internet.
+                  Pixture does not perform facial recognition, facial landmark extraction, or
+                  biometric harvesting. On-device background segmentation runs locally purely to
+                  isolate subjects for plain color replacement. Sensitive government documents such
+                  as passport and visa photographs remain strictly in local memory and are never
+                  transmitted over the internet.
                 </p>
 
                 <h4 className="text-sm font-semibold text-md-on-surface">
@@ -269,6 +271,11 @@ export function LegalModal({ isOpen, onClose, defaultTab = 'privacy' }: LegalMod
                       beyond physical dimensions (including neutral facial expression, eye level
                       height, lighting uniformity, plain light background, and matte vs. glossy
                       paper finish).
+                    </li>
+                    <li>
+                      Certain government authorities prohibit digitally altered or replaced
+                      backgrounds. Always verify whether your jurisdiction allows digital background
+                      replacement or mandates a physical background.
                     </li>
                     <li>
                       You are solely responsible for reviewing and verifying the official guidelines
@@ -423,6 +430,20 @@ SOFTWARE.`}
                   </div>
                   <div className="text-[11px] text-md-on-surface-variant">
                     Google LLC • Apache 2.0 License
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
+                  <div className="font-semibold text-md-on-surface">@imgly/background-removal</div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    9elements / IMG.LY • AGPL-3.0 License
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-md-surface-container border border-md-outline-variant/60">
+                  <div className="font-semibold text-md-on-surface">onnxruntime-web</div>
+                  <div className="text-[11px] text-md-on-surface-variant">
+                    Microsoft Corporation • MIT License
                   </div>
                 </div>
               </div>

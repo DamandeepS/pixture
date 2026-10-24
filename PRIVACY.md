@@ -11,7 +11,7 @@ Pixture is architected from the ground up as a **100% client-side, zero-knowledg
 
 ## 1. Summary of Core Privacy Principles
 
-* **No Remote File Uploads:** Your photos never leave your device. All image decoding, rendering, cropping, color adjustment, grid layout, and PDF/PNG exports are executed strictly inside your device's web browser using client-side JavaScript, Canvas, and WebAssembly APIs.
+* **No Remote File Uploads:** Your photos never leave your device. All image decoding, rendering, cropping, color adjustment, AI background removal and plain color replacement, grid layout, and PDF/PNG exports are executed strictly inside your device's web browser using client-side JavaScript, Canvas, and WebAssembly APIs.
 * **No Cloud Storage or Remote Databases:** We do not operate remote photo storage servers or cloud databases. There is no server backend receiving, inspecting, or storing your pictures.
 * **No Tracking, Telemetry, or Analytics:** Pixture contains zero third-party tracking scripts, zero advertising networks, zero analytics beacons (no Google Analytics, no Facebook Pixels), and zero invasive telemetry.
 * **No Account Required:** You do not need an email, phone number, or password to use Pixture.
@@ -25,6 +25,12 @@ When you select, drag, or drop photos into Pixture:
 * Photos are read locally using standard browser `FileReader` and `ImageData` APIs.
 * Photos are stored solely in your computer or device memory (RAM) while the browser tab is open.
 * **Network Isolation:** No network requests (`fetch`, `XMLHttpRequest`, or `WebSocket`) are initiated with your image payload. You can disconnect your device from the internet (airplane mode) and Pixture will continue to work normally.
+
+### 2.2 On-Device AI Background Removal
+When utilizing the Background Removal or Plain Color Replacement features:
+* All segmentation and neural network inference are executed 100% locally on your device via ONNX Runtime WebAssembly (`onnxruntime-web`) and client-side processing.
+* Your images and cutouts are never transmitted to external AI servers, third-party APIs, or cloud endpoints.
+* The pre-trained ONNX model weights and WASM binaries are static, read-only assets fetched from a public static CDN and cached directly in your browser's local CacheStorage for offline use. Your photos are never sent out during or after this download.
 
 ### 2.2 Local Session Storage (IndexedDB)
 To prevent accidental loss of your work if you refresh the browser page or close your tab, Pixture may save your active project layout and cached image data locally on your device via the browser's built-in **IndexedDB** database (`idb-keyval`).
@@ -40,7 +46,8 @@ If you choose to export your project via the `.pixture` file format, the resulti
 ## 3. Biometric and Sensitive Personal Data
 
 When creating government passport or visa photo sheets (US Passport, Schengen, UK, India, etc.), photos may contain sensitive facial geometry and biometric data:
-* Pixture does **not** perform facial recognition, feature tagging, biometric harvesting, or AI model training.
+* Pixture does **not** perform facial recognition, facial identity matching, feature tagging, biometric harvesting, or AI model training.
+* The on-device background segmentation model produces an image foreground mask solely to isolate the subject from the background; it does not identify individuals or extract biometric facial vectors.
 * Your likeness remains strictly within your browser sandbox.
 
 ---

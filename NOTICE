@@ -37,5 +37,13 @@ used in accordance with their respective permissive licenses:
    Copyright (c) Google LLC.
    License: Apache License 2.0 (https://github.com/material-components/material-web/blob/main/LICENSE)
 
+9. @imgly/background-removal
+   Copyright (c) 9elements GmbH / IMG.LY GmbH.
+   License: AGPL-3.0 (https://github.com/imgly/background-removal-js/blob/main/LICENSE.md)
+
+10. onnxruntime-web
+    Copyright (c) Microsoft Corporation.
+    License: MIT (https://github.com/microsoft/onnxruntime/blob/main/LICENSE)
+
 --------------------------------------------------------------------------------
 Copies of the full licenses are available in the respective upstream repositories.

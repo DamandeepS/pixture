@@ -31,6 +31,7 @@ By using the Software to process images, you represent and warrant that:
 ### 3.1 Official Passport and Identity Document Disclaimer
 While Pixture provides predefined templates adhering to published standard dimensional guidelines (e.g., US 2×2 inch, UK/EU 35×45 mm, India Passport 35×45 mm):
 * **No Guarantee of Acceptance:** Government passport agencies, visa consulates, and identity issuing authorities enforce strict biometric criteria beyond physical dimensions (such as background luminance, neutral facial expression, eye height ratios, paper finish, and photo recency).
+* **Background Alteration Regulations:** While Pixture provides tools for AI background removal and replacement with solid colors (such as pure white, off-white, and light blue), certain government agencies strictly prohibit digitally altered, composite, or artificially replaced backgrounds in passport and visa applications.
 * **User Responsibility:** You are solely responsible for reviewing and verifying the latest official requirements of the relevant governmental authority prior to submitting printed photos. The developers of Pixture accept no liability for rejected passport or visa applications, expedited processing fees, or missed travel deadlines.
 
 ### 3.2 Printing & Hardware Tolerances Disclaimer

@@ -1,5 +1,11 @@
 # web
 
+## 1.1.1
+
+### Patch Changes
+
+- docs(legal): update privacy policy, terms of service, open-source notice, and feature documentation for on-device AI background removal
+
 ## 1.1.0
 
 ### Minor Changes
