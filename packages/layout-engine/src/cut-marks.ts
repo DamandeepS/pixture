@@ -47,71 +47,74 @@ export function generateCutMarks(config: CutMarksConfig): CutMarksResult {
     heightMm: s.heightMm + bleedMm * 2,
   }));
 
+  // Corner tick marks must start outside the bleed area so no ink overlaps the ticks
+  const effectiveOffset = markOffsetMm + bleedMm;
+
   for (const slot of slots) {
     const { xMm: x, yMm: y, widthMm: w, heightMm: h } = slot;
 
     if (style === 'corners') {
       // Top-Left corner
       lines.push({
-        x1Mm: x - markLengthMm - markOffsetMm,
+        x1Mm: x - markLengthMm - effectiveOffset,
         y1Mm: y,
-        x2Mm: x - markOffsetMm,
+        x2Mm: x - effectiveOffset,
         y2Mm: y,
         style: 'solid',
       });
       lines.push({
         x1Mm: x,
-        y1Mm: y - markLengthMm - markOffsetMm,
+        y1Mm: y - markLengthMm - effectiveOffset,
         x2Mm: x,
-        y2Mm: y - markOffsetMm,
+        y2Mm: y - effectiveOffset,
         style: 'solid',
       });
 
       // Top-Right corner
       lines.push({
-        x1Mm: x + w + markOffsetMm,
+        x1Mm: x + w + effectiveOffset,
         y1Mm: y,
-        x2Mm: x + w + markLengthMm + markOffsetMm,
+        x2Mm: x + w + markLengthMm + effectiveOffset,
         y2Mm: y,
         style: 'solid',
       });
       lines.push({
         x1Mm: x + w,
-        y1Mm: y - markLengthMm - markOffsetMm,
+        y1Mm: y - markLengthMm - effectiveOffset,
         x2Mm: x + w,
-        y2Mm: y - markOffsetMm,
+        y2Mm: y - effectiveOffset,
         style: 'solid',
       });
 
       // Bottom-Left corner
       lines.push({
-        x1Mm: x - markLengthMm - markOffsetMm,
+        x1Mm: x - markLengthMm - effectiveOffset,
         y1Mm: y + h,
-        x2Mm: x - markOffsetMm,
+        x2Mm: x - effectiveOffset,
         y2Mm: y + h,
         style: 'solid',
       });
       lines.push({
         x1Mm: x,
-        y1Mm: y + h + markOffsetMm,
+        y1Mm: y + h + effectiveOffset,
         x2Mm: x,
-        y2Mm: y + h + markLengthMm + markOffsetMm,
+        y2Mm: y + h + markLengthMm + effectiveOffset,
         style: 'solid',
       });
 
       // Bottom-Right corner
       lines.push({
-        x1Mm: x + w + markOffsetMm,
+        x1Mm: x + w + effectiveOffset,
         y1Mm: y + h,
-        x2Mm: x + w + markLengthMm + markOffsetMm,
+        x2Mm: x + w + markLengthMm + effectiveOffset,
         y2Mm: y + h,
         style: 'solid',
       });
       lines.push({
         x1Mm: x + w,
-        y1Mm: y + h + markOffsetMm,
+        y1Mm: y + h + effectiveOffset,
         x2Mm: x + w,
-        y2Mm: y + h + markLengthMm + markOffsetMm,
+        y2Mm: y + h + markLengthMm + effectiveOffset,
         style: 'solid',
       });
     } else if (style === 'dashed') {

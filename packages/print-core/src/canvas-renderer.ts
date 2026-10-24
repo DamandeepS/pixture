@@ -74,14 +74,16 @@ export async function renderSheetToCanvas(options: RenderSheetOptions): Promise<
   }
 
   // 2. Draw photo slots
+  const bleed = config.bleedMm || 0;
+
   for (let i = 0; i < slotsGeometry.length; i++) {
     const geom = slotsGeometry[i];
     const assignment = page.slots.find((s) => s.slotIndex === i);
 
-    const slotX = Math.round(geom.xMm * pxPerMm);
-    const slotY = Math.round(geom.yMm * pxPerMm);
-    const slotW = Math.round(geom.widthMm * pxPerMm);
-    const slotH = Math.round(geom.heightMm * pxPerMm);
+    const slotX = Math.round((geom.xMm - bleed) * pxPerMm);
+    const slotY = Math.round((geom.yMm - bleed) * pxPerMm);
+    const slotW = Math.round((geom.widthMm + bleed * 2) * pxPerMm);
+    const slotH = Math.round((geom.heightMm + bleed * 2) * pxPerMm);
 
     if (assignment && assignment.photoId) {
       const img = loadedImages.get(assignment.photoId);

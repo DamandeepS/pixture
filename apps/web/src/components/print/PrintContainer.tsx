@@ -153,16 +153,17 @@ export function PrintContainer() {
                   : Math.max(slotGeom.widthMm / slotGeom.heightMm, slotGeom.heightMm / slotGeom.widthMm))
               : 1;
             const effectiveZoom = adj.zoom * rotScale;
+            const bleed = config.bleedMm || 0;
 
             return (
               <div
                 key={slotGeom.index}
                 className="absolute overflow-hidden flex items-center justify-center bg-white"
                 style={{
-                  left: `${slotGeom.xMm}mm`,
-                  top: `${slotGeom.yMm}mm`,
-                  width: `${slotGeom.widthMm}mm`,
-                  height: `${slotGeom.heightMm}mm`,
+                  left: `${slotGeom.xMm - bleed}mm`,
+                  top: `${slotGeom.yMm - bleed}mm`,
+                  width: `${slotGeom.widthMm + bleed * 2}mm`,
+                  height: `${slotGeom.heightMm + bleed * 2}mm`,
                 }}
               >
                 <div

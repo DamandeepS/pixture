@@ -86,7 +86,7 @@ export function ToolPanel() {
   return (
     <aside
       aria-label="Configuration and inspector panel"
-      className="w-84 border-l border-md-outline-variant bg-md-surface flex flex-col shrink-0 select-none z-20 h-full overflow-hidden"
+      className="w-[360px] min-w-[360px] max-w-[360px] border-l border-md-outline-variant bg-md-surface flex flex-col shrink-0 select-none z-20 h-full overflow-hidden"
     >
       {/* Segmented Tab Header */}
       <div className="p-3 border-b border-md-outline-variant">
@@ -130,7 +130,7 @@ export function ToolPanel() {
       </div>
 
       {/* Tab Content Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-5 text-xs text-md-on-surface">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 p-4 space-y-5 text-xs text-md-on-surface">
         {/* TAB 1: SHEET & PAPER */}
         {activeTab === 'sheet' && (
           <>
@@ -339,7 +339,7 @@ export function ToolPanel() {
           <>
             <div className="bg-md-surface-container p-3 rounded-md-lg flex items-start gap-2.5">
               <Info className="w-4 h-4 text-google-blue shrink-0 mt-0.5" />
-              <p className="text-[11px] text-md-on-surface-variant leading-relaxed">
+              <p className="text-[11px] text-md-on-surface-variant leading-relaxed break-words min-w-0 flex-1">
                 Cut marks ensure clean alignment with scissors or a paper trimmer. Corner tick marks stay outside the photo so no ink shows after trimming.
               </p>
             </div>
@@ -411,8 +411,8 @@ export function ToolPanel() {
                 <label className="font-semibold text-md-on-surface">
                   {t('bleed')} ({activeUnit})
                 </label>
-                <span className="text-md-on-surface-variant font-mono">
-                  {config.bleedMm} mm
+                <span className="text-md-on-surface-variant font-mono text-xs font-semibold">
+                  {formatMeasurement(config.bleedMm, activeUnit, 1)}
                 </span>
               </div>
               <input
@@ -422,8 +422,13 @@ export function ToolPanel() {
                 step="0.5"
                 value={config.bleedMm}
                 onChange={(e) => updateConfig({ bleedMm: Number(e.target.value) })}
-                className="w-full accent-md-primary"
+                className="w-full accent-md-primary cursor-pointer"
               />
+              <div className="flex justify-between text-[10px] text-md-on-surface-variant font-mono">
+                <span>{formatMeasurement(0, activeUnit, 0)}</span>
+                <span>{formatMeasurement(2.5, activeUnit, 1)}</span>
+                <span>{formatMeasurement(5, activeUnit, 0)}</span>
+              </div>
             </div>
           </>
         )}
@@ -458,7 +463,7 @@ export function ToolPanel() {
                   <div className="font-semibold text-xs text-md-on-surface">
                     Slot #{selectedSlotIndex + 1} (Empty)
                   </div>
-                  <p className="text-[11px] text-md-on-surface-variant mt-1">
+                  <p className="text-[11px] text-md-on-surface-variant mt-1 leading-relaxed break-words">
                     Add a photo to this slot by uploading or choosing from your photos.
                   </p>
                 </div>
@@ -497,13 +502,13 @@ export function ToolPanel() {
             ) : (
               <div className="space-y-4">
                 {/* Photo thumbnail & name */}
-                <div className="flex items-center gap-3 p-2.5 bg-md-surface-container rounded-md-lg">
+                <div className="flex items-center gap-3 p-2.5 bg-md-surface-container rounded-md-lg min-w-0">
                   <img
                     src={selectedPhoto.dataUrl}
                     alt={selectedPhoto.name}
-                    className="w-12 h-12 object-cover rounded-md-sm border border-md-outline-variant"
+                    className="w-12 h-12 object-cover rounded-md-sm border border-md-outline-variant shrink-0"
                   />
-                  <div className="overflow-hidden">
+                  <div className="overflow-hidden min-w-0 flex-1">
                     <div className="font-semibold text-xs truncate text-md-on-surface">
                       {selectedPhoto.name}
                     </div>

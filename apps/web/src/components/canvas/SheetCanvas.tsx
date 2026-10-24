@@ -216,7 +216,7 @@ export function SheetCanvas() {
     <main
       id="main-canvas"
       ref={containerRef}
-      className="flex-1 bg-md-surface-container-low relative overflow-auto flex flex-col items-center justify-start p-6 select-none focus:outline-none"
+      className="flex-1 min-w-0 bg-md-surface-container-low relative overflow-auto flex flex-col items-center justify-start p-6 select-none focus:outline-none"
       tabIndex={-1}
       aria-label="Photo sheet canvas editor"
     >
@@ -413,10 +413,13 @@ export function SheetCanvas() {
               const photo = assignment?.photoId ? photoMap.get(assignment.photoId) : null;
               const adj = assignment?.adjustments;
 
-              const slotLeft = slotGeom.xMm * pxPerMm;
-              const slotTop = slotGeom.yMm * pxPerMm;
-              const slotW = slotGeom.widthMm * pxPerMm;
-              const slotH = slotGeom.heightMm * pxPerMm;
+              const bleed = config.bleedMm || 0;
+              const bleedPx = bleed * pxPerMm;
+
+              const slotLeft = (slotGeom.xMm - bleed) * pxPerMm;
+              const slotTop = (slotGeom.yMm - bleed) * pxPerMm;
+              const slotW = (slotGeom.widthMm + bleed * 2) * pxPerMm;
+              const slotH = (slotGeom.heightMm + bleed * 2) * pxPerMm;
 
               return (
                 <div
@@ -479,24 +482,36 @@ export function SheetCanvas() {
                   {/* Empty Slot Placeholder with Click-to-Upload */}
                   {!photo && (
                     <div
-                      className="w-full h-full border border-dashed border-md-outline/70 hover:border-md-primary hover:bg-md-primary-container/20 flex flex-col items-center justify-center p-2 text-center text-md-on-surface-variant hover:text-md-primary transition-all group/slot cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedSlotIndex(slotGeom.index);
-                        setTargetSlotForUpload(slotGeom.index);
-                        slotFileInputRef.current?.click();
-                      }}
-                      title={t('clickToUpload')}
+                      className="w-full h-full flex items-center justify-center relative"
+                      style={{ padding: `${bleedPx}px` }}
                     >
-                      <div className="w-7 h-7 rounded-md-full bg-md-surface-container group-hover/slot:bg-md-primary group-hover/slot:text-white flex items-center justify-center transition-colors mb-1 shadow-sm">
-                        <Plus className="w-4 h-4" />
+                      {bleed > 0 && (
+                        <div
+                          className="absolute inset-0 bg-google-red/5 border border-dashed border-google-red/30 pointer-events-none"
+                          title={`Bleed zone: +${bleed}mm`}
+                        />
+                      )}
+                      <div
+                        className="w-full h-full border border-dashed border-md-outline/70 hover:border-md-primary hover:bg-md-primary-container/20 flex flex-col items-center justify-center p-2 text-center text-md-on-surface-variant hover:text-md-primary transition-all group/slot cursor-pointer relative z-10 bg-white"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSlotIndex(slotGeom.index);
+                          setTargetSlotForUpload(slotGeom.index);
+                          slotFileInputRef.current?.click();
+                        }}
+                        title={t('clickToUpload')}
+                      >
+                        <div className="w-7 h-7 rounded-md-full bg-md-surface-container group-hover/slot:bg-md-primary group-hover/slot:text-white flex items-center justify-center transition-colors mb-1 shadow-sm">
+                          <Plus className="w-4 h-4" />
+                        </div>
+                        <span className="text-[10px] font-semibold leading-tight">
+                          {t('addPhotos')}
+                        </span>
+                        <span className="text-[8px] opacity-60 mt-0.5">
+                          {slotGeom.widthMm.toFixed(0)} × {slotGeom.heightMm.toFixed(0)} mm
+                          {bleed > 0 ? ` (+${bleed}mm bleed)` : ''}
+                        </span>
                       </div>
-                      <span className="text-[10px] font-semibold leading-tight">
-                        {t('addPhotos')}
-                      </span>
-                      <span className="text-[8px] opacity-60 mt-0.5">
-                        {slotGeom.widthMm.toFixed(0)} × {slotGeom.heightMm.toFixed(0)} mm
-                      </span>
                     </div>
                   )}
 
@@ -536,6 +551,20 @@ export function SheetCanvas() {
                               filter: buildCssFilterString(adj),
                             }}
                           />
+
+                          {/* Trim Line Guide (Cut Boundary when Bleed is active) */}
+                          {bleed > 0 && (
+                            <div
+                              className="absolute pointer-events-none z-10 border border-dashed border-white/90 shadow-[0_0_0_1px_rgba(0,0,0,0.35)]"
+                              style={{
+                                left: `${bleedPx}px`,
+                                top: `${bleedPx}px`,
+                                width: `${slotGeom.widthMm * pxPerMm}px`,
+                                height: `${slotGeom.heightMm * pxPerMm}px`,
+                              }}
+                              title={`Trim boundary: ${slotGeom.widthMm} × ${slotGeom.heightMm} mm (+${bleed}mm bleed)`}
+                            />
+                          )}
 
                           {adj.isPolaroid && adj.polaroidCaption && (
                             <div
