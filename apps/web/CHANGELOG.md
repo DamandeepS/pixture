@@ -1,5 +1,11 @@
 # web
 
+## 1.1.2
+
+### Patch Changes
+
+- feat(seo): add comprehensive search engine optimization, Open Graph, Twitter cards, Schema.org JSON-LD, sitemap, robots.txt, and 1200x630 social preview image
+
 ## 1.1.1
 
 ### Patch Changes

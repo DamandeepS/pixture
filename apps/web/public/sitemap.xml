@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://damandeeps.github.io/pixture/</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://damandeeps.github.io/pixture/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://damandeeps.github.io/pixture/" />
+    <xhtml:link rel="alternate" hreflang="es" href="https://damandeeps.github.io/pixture/" />
+    <xhtml:link rel="alternate" hreflang="fr" href="https://damandeeps.github.io/pixture/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://damandeeps.github.io/pixture/" />
+    <xhtml:link rel="alternate" hreflang="hi" href="https://damandeeps.github.io/pixture/" />
+    <xhtml:link rel="alternate" hreflang="ja" href="https://damandeeps.github.io/pixture/" />
+    <image:image>
+      <image:loc>https://damandeeps.github.io/pixture/og-image.png</image:loc>
+      <image:title>Pixture - Precision Photo Printing &amp; Grid Layout Studio</image:title>
+      <image:caption>Free in-browser photo printing studio with auto-fit grid layout, passport templates, on-device AI background removal, and 300 DPI PDF export.</image:caption>
+    </image:image>
+  </url>
+</urlset>

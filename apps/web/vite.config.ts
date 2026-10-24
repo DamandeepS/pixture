@@ -16,7 +16,14 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       injectRegister: 'auto',
-      includeAssets: ['favicon.png', 'icons/apple-touch-icon.png', 'icons/*.png'],
+      includeAssets: [
+        'favicon.png',
+        'og-image.png',
+        'robots.txt',
+        'sitemap.xml',
+        'icons/apple-touch-icon.png',
+        'icons/*.png',
+      ],
       manifest: {
         name: 'Pixture - Precision Photo Printing & Grid Layout Studio',
         short_name: 'Pixture',

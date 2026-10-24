@@ -1,30 +1,132 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="en" dir="ltr" prefix="og: https://ogp.me/ns#">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pixture - Precision Photo Printing & Grid Layout</title>
+
+    <!-- Primary Meta Tags -->
+    <title>Pixture - Free Precision Photo Printing & Grid Layout Studio</title>
+    <meta name="title" content="Pixture - Free Precision Photo Printing & Grid Layout Studio" />
     <meta
       name="description"
-      content="Precision photo printing, auto-fit grid layouts, cropping, and cut markings with Google-inspired design."
+      content="Free, 100% private in-browser photo printing studio. Auto-fit passport & grid layouts, on-device AI background removal, custom paper sizes, precision crop, and 300 DPI cut-mark PDF export."
     />
+    <meta
+      name="keywords"
+      content="photo printing, passport photo maker, photo layout, print sheet imposition, id photo, passport photo white background, ai background removal, photo grid, 300 dpi pdf print, cut marks, wallet photo print, polaroid frame, pwa, 100% private photo editor"
+    />
+    <meta name="author" content="Pixture Contributors" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <link rel="canonical" href="https://damandeeps.github.io/pixture/" />
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="./sitemap.xml" />
+
+    <!-- Open Graph / Facebook / LinkedIn / Discord / Slack -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Pixture" />
+    <meta property="og:url" content="https://damandeeps.github.io/pixture/" />
+    <meta
+      property="og:title"
+      content="Pixture - Free Precision Photo Printing & Grid Layout Studio"
+    />
+    <meta
+      property="og:description"
+      content="Free, 100% private in-browser photo printing studio. Auto-fit passport & grid layouts, on-device AI background removal, precision crop, and 300 DPI cut-mark PDF export."
+    />
+    <meta property="og:image" content="https://damandeeps.github.io/pixture/og-image.png" />
+    <meta
+      property="og:image:secure_url"
+      content="https://damandeeps.github.io/pixture/og-image.png"
+    />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Pixture - Precision Photo Printing & Grid Layout Studio"
+    />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="es_ES" />
+    <meta property="og:locale:alternate" content="fr_FR" />
+    <meta property="og:locale:alternate" content="de_DE" />
+    <meta property="og:locale:alternate" content="hi_IN" />
+    <meta property="og:locale:alternate" content="ja_JP" />
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://damandeeps.github.io/pixture/" />
+    <meta
+      name="twitter:title"
+      content="Pixture - Free Precision Photo Printing & Grid Layout Studio"
+    />
+    <meta
+      name="twitter:description"
+      content="Free, 100% private in-browser photo printing studio. Auto-fit passport & grid layouts, on-device AI background removal, precision crop, and 300 DPI cut-mark PDF export."
+    />
+    <meta name="twitter:image" content="https://damandeeps.github.io/pixture/og-image.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Pixture - Precision Photo Printing & Grid Layout Studio"
+    />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
+
+    <!-- Icons & Manifest -->
     <link
       rel="icon"
       type="image/svg+xml"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%231a73e8'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-5.04-6.71l-2.75 3.54-1.96-2.36L6.5 17h11l-3.54-4.71z'/></svg>"
     />
     <link rel="icon" type="image/png" sizes="64x64" href="./favicon.png" />
-    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
+
+    <!-- Mobile & PWA Configuration -->
     <meta name="theme-color" content="#1a73e8" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="application-name" content="Pixture" />
+    <meta name="apple-mobile-web-app-title" content="Pixture" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Pixture" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Schema.org JSON-LD Structured Data for Rich Snippets -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Pixture",
+        "alternateName": "Pixture Photo Studio",
+        "url": "https://damandeeps.github.io/pixture/",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "All",
+        "description": "Free, 100% private in-browser photo printing studio. Auto-fit passport & grid layouts, on-device AI background removal, custom paper sizes, precision crop, and 300 DPI cut-mark PDF export.",
+        "image": "https://damandeeps.github.io/pixture/og-image.png",
+        "screenshot": "https://damandeeps.github.io/pixture/og-image.png",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "browserRequirements": "Requires JavaScript. Requires HTML5 Canvas and WebAssembly.",
+        "featureList": [
+          "100% client-side zero-upload private photo processing",
+          "Auto-fit grid layout and multi-photo packing on any paper size",
+          "Official passport and ID templates (US, UK/EU, India, etc.)",
+          "On-device AI background removal and solid passport color replacement",
+          "300 DPI high-resolution PDF and PNG export with crop marks",
+          "Full offline Progressive Web App (PWA) support"
+        ]
+      }
+    </script>
   </head>
   <body
     class="bg-md-surface-container-low text-md-on-surface antialiased font-sans select-none overflow-hidden h-screen w-screen"
