@@ -1,0 +1,41 @@
+Pixture
+Copyright (c) 2026 Pixture Contributors
+
+This product includes software developed by third-party open-source projects,
+used in accordance with their respective permissive licenses:
+
+--------------------------------------------------------------------------------
+1. React
+   Copyright (c) Meta Platforms, Inc. and affiliates.
+   License: MIT (https://github.com/facebook/react/blob/main/LICENSE)
+
+2. Vite
+   Copyright (c) 2019-present Evan You & Vite Contributors.
+   License: MIT (https://github.com/vitejs/vite/blob/main/LICENSE)
+
+3. Tailwind CSS
+   Copyright (c) Tailwind Labs, Inc.
+   License: MIT (https://github.com/tailwindlabs/tailwindcss/blob/master/LICENSE)
+
+4. Lucide React
+   Copyright (c) Lucide Project Authors.
+   License: ISC (https://github.com/lucide-icons/lucide/blob/main/LICENSE)
+
+5. pdf-lib
+   Copyright (c) 2019 Andrew Dillon.
+   License: MIT (https://github.com/Hopding/pdf-lib/blob/master/LICENSE.md)
+
+6. idb-keyval
+   Copyright (c) 2016 Jake Archibald.
+   License: Apache License 2.0 (https://github.com/jakearchibald/idb-keyval/blob/main/LICENSE)
+
+7. canvas-confetti
+   Copyright (c) 2020 Kiril Vatev.
+   License: ISC (https://github.com/catdad/canvas-confetti/blob/master/LICENSE)
+
+8. Google Material Design 3 Design Tokens
+   Copyright (c) Google LLC.
+   License: Apache License 2.0 (https://github.com/material-components/material-web/blob/main/LICENSE)
+
+--------------------------------------------------------------------------------
+Copies of the full licenses are available in the respective upstream repositories.

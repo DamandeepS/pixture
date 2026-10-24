@@ -10,8 +10,10 @@ import {
   Save,
   FolderOpen,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { LegalModal } from '../legal/LegalModal.js';
 import { useProject } from '../../state/ProjectContext.js';
 import { useI18n, SUPPORTED_LOCALES, LocaleCode } from '@pixture/i18n';
 import {
@@ -47,6 +49,7 @@ export function AppBar() {
 
   const { locale, setLocale, t } = useI18n();
   const [isExporting, setIsExporting] = useState(false);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Compute current slots geometry for export
@@ -254,6 +257,17 @@ export function AppBar() {
             ))}
           </select>
         </div>
+
+        {/* Legal & Privacy Guarantee Button */}
+        <button
+          onClick={() => setIsLegalModalOpen(true)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/40 text-xs font-semibold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors shadow-sm"
+          title={`${t('legalAndPrivacy')} (${t('onDeviceGuarantee')})`}
+          aria-label={t('legalAndPrivacy')}
+        >
+          <ShieldCheck className="w-3.5 h-3.5 text-google-green" />
+          <span className="hidden md:inline">{t('legalAndPrivacy')}</span>
+        </button>
       </div>
 
       {/* Right Actions: Save, Open, Export, Print */}
@@ -327,6 +341,12 @@ export function AppBar() {
           <Sparkles className="w-3 h-3 opacity-80" />
         </button>
       </div>
+
+      {/* Accessible In-App Legal & Privacy Modal */}
+      <LegalModal
+        isOpen={isLegalModalOpen}
+        onClose={() => setIsLegalModalOpen(false)}
+      />
     </header>
   );
 }
