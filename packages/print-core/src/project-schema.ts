@@ -62,6 +62,13 @@ export interface SheetConfig {
   cutMarkStyle: CutMarkStyle;
   cutMarkColor: string;
   bleedMm: number;
+
+  // Dual-size / Mixed sizes layout configuration
+  primaryPhotoCount: number;
+  secondaryPhotoPresetId: string;
+  secondaryPhotoCount: number;
+  customSecondaryWidthMm?: number;
+  customSecondaryHeightMm?: number;
 }
 
 export const DEFAULT_SHEET_CONFIG: SheetConfig = {
@@ -76,6 +83,10 @@ export const DEFAULT_SHEET_CONFIG: SheetConfig = {
   cutMarkStyle: 'corners',
   cutMarkColor: '#5f6368',
   bleedMm: 0,
+
+  primaryPhotoCount: 1,
+  secondaryPhotoPresetId: 'passport_us',
+  secondaryPhotoCount: 4,
 };
 
 export interface PageSlotAssignment {

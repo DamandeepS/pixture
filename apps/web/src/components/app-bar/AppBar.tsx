@@ -21,10 +21,8 @@ import {
   renderSheetToCanvas,
 } from '@pixture/print-core';
 import {
-  computeUniformGridLayout,
   getPaperDimensions,
-  PHOTO_PRESETS,
-  packMixedPhotos,
+  computeSheetSlotsGeometry,
 } from '@pixture/layout-engine';
 
 export function AppBar() {
@@ -60,54 +58,26 @@ export function AppBar() {
       config.customHeightMm
     );
 
-    if (config.layoutMode === 'mixed') {
-      const itemsToPack = photos.map((p) => {
-        const preset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-        return {
-          id: p.id,
-          widthMm: config.customPhotoWidthMm || preset.widthMm,
-          heightMm: config.customPhotoHeightMm || preset.heightMm,
-        };
-      });
-
-      const packResult = packMixedPhotos({
-        sheetWidthMm: paperDim.widthMm,
-        sheetHeightMm: paperDim.heightMm,
-        marginsMm: config.marginsMm,
-        gapMm: config.gapXMm,
-        items: itemsToPack,
-      });
-
-      const pagePlaced = packResult.placedItems.filter((i) => i.pageIndex === currentPageIndex);
-      return pagePlaced.map((item) => ({
-        xMm: item.xMm,
-        yMm: item.yMm,
-        widthMm: item.widthMm,
-        heightMm: item.heightMm,
-      }));
-    }
-
-    const photoPreset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-    const photoW = config.customPhotoWidthMm || photoPreset.widthMm;
-    const photoH = config.customPhotoHeightMm || photoPreset.heightMm;
-
-    const grid = computeUniformGridLayout({
+    const res = computeSheetSlotsGeometry({
       sheetWidthMm: paperDim.widthMm,
       sheetHeightMm: paperDim.heightMm,
       marginsMm: config.marginsMm,
-      slotWidthMm: photoW,
-      slotHeightMm: photoH,
       gapXMm: config.gapXMm,
       gapYMm: config.gapYMm,
+      layoutMode: config.layoutMode,
       autoOrientation: config.autoOrientation,
+      photoPresetId: config.photoPresetId,
+      customPhotoWidthMm: config.customPhotoWidthMm,
+      customPhotoHeightMm: config.customPhotoHeightMm,
+      primaryPhotoCount: config.primaryPhotoCount ?? 1,
+      secondaryPhotoPresetId: config.secondaryPhotoPresetId ?? 'passport_us',
+      secondaryPhotoCount: config.secondaryPhotoCount ?? 4,
+      customSecondaryWidthMm: config.customSecondaryWidthMm,
+      customSecondaryHeightMm: config.customSecondaryHeightMm,
+      currentPageIndex,
     });
 
-    return grid.slots.map((s) => ({
-      xMm: s.xMm,
-      yMm: s.yMm,
-      widthMm: s.widthMm,
-      heightMm: s.heightMm,
-    }));
+    return res.slots;
   };
 
   const handlePrint = () => {

@@ -16,10 +16,8 @@ import { useProject } from '../../state/ProjectContext.js';
 import { useI18n } from '@pixture/i18n';
 import {
   getPaperDimensions,
-  computeUniformGridLayout,
-  packMixedPhotos,
-  PHOTO_PRESETS,
   generateCutMarks,
+  computeSheetSlotsGeometry,
   CutMarkStyle,
 } from '@pixture/layout-engine';
 import { buildCssFilterString } from '@pixture/print-core';
@@ -66,54 +64,29 @@ export function SheetCanvas() {
     );
   }, [config.paperId, config.orientation, config.customWidthMm, config.customHeightMm]);
 
-  // Compute layout slots geometry
-  const slotsGeometry = useMemo(() => {
-    const photoPreset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-    const photoW = config.customPhotoWidthMm || photoPreset.widthMm;
-    const photoH = config.customPhotoHeightMm || photoPreset.heightMm;
-
-    if (config.layoutMode === 'mixed') {
-      const itemsToPack = photos.map((p) => {
-        return {
-          id: p.id,
-          widthMm: photoW,
-          heightMm: photoH,
-        };
-      });
-
-      const packResult = packMixedPhotos({
-        sheetWidthMm: paperDim.widthMm,
-        sheetHeightMm: paperDim.heightMm,
-        marginsMm: config.marginsMm,
-        gapMm: config.gapXMm,
-        items: itemsToPack,
-      });
-
-      const pagePlaced = packResult.placedItems.filter((i) => i.pageIndex === currentPageIndex);
-      return pagePlaced.map((item, idx) => ({
-        index: idx,
-        xMm: item.xMm,
-        yMm: item.yMm,
-        widthMm: item.widthMm,
-        heightMm: item.heightMm,
-        isRotated: false,
-      }));
-    }
-
-    const grid = computeUniformGridLayout({
+  // Compute layout slots geometry (supports uniform grid and dual-size mixed sheets)
+  const slotsGeometryResult = useMemo(() => {
+    return computeSheetSlotsGeometry({
       sheetWidthMm: paperDim.widthMm,
       sheetHeightMm: paperDim.heightMm,
       marginsMm: config.marginsMm,
-      slotWidthMm: photoW,
-      slotHeightMm: photoH,
       gapXMm: config.gapXMm,
       gapYMm: config.gapYMm,
+      layoutMode: config.layoutMode,
       autoOrientation: config.autoOrientation,
-      allowAutoRotate: photoPreset.allowAutoRotate !== false,
+      photoPresetId: config.photoPresetId,
+      customPhotoWidthMm: config.customPhotoWidthMm,
+      customPhotoHeightMm: config.customPhotoHeightMm,
+      primaryPhotoCount: config.primaryPhotoCount ?? 1,
+      secondaryPhotoPresetId: config.secondaryPhotoPresetId ?? 'passport_us',
+      secondaryPhotoCount: config.secondaryPhotoCount ?? 4,
+      customSecondaryWidthMm: config.customSecondaryWidthMm,
+      customSecondaryHeightMm: config.customSecondaryHeightMm,
+      currentPageIndex,
     });
+  }, [config, paperDim, currentPageIndex]);
 
-    return grid.slots;
-  }, [config, paperDim, photos, currentPageIndex]);
+  const slotsGeometry = slotsGeometryResult.slots;
 
   // Fit scale calculation based on viewport
   useEffect(() => {
@@ -507,7 +480,12 @@ export function SheetCanvas() {
                         <span className="text-[10px] font-semibold leading-tight">
                           {t('addPhotos')}
                         </span>
-                        <span className="text-[8px] opacity-60 mt-0.5">
+                        <span className="text-[8px] opacity-75 mt-0.5 font-medium">
+                          {config.layoutMode === 'mixed' && (
+                            <span className={`font-bold mr-1 ${slotGeom.sizeType === 'primary' ? 'text-md-primary' : 'text-google-green'}`}>
+                              {slotGeom.sizeType === 'primary' ? 'Size 1:' : 'Size 2:'}
+                            </span>
+                          )}
                           {slotGeom.widthMm.toFixed(0)} × {slotGeom.heightMm.toFixed(0)} mm
                           {bleed > 0 ? ` (+${bleed}mm bleed)` : ''}
                         </span>
@@ -575,6 +553,19 @@ export function SheetCanvas() {
                             </div>
                           )}
                         </div>
+
+                        {/* Mixed Dual Size Indicator Badge */}
+                        {config.layoutMode === 'mixed' && (
+                          <div
+                            className={`absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md-full text-[9px] font-bold z-20 pointer-events-none shadow-sm ${
+                              slotGeom.sizeType === 'primary'
+                                ? 'bg-md-primary text-white'
+                                : 'bg-google-green text-white'
+                            }`}
+                          >
+                            {slotGeom.sizeType === 'primary' ? 'Size 1' : 'Size 2'}
+                          </div>
+                        )}
 
                         {/* Hover / Selected Overlay Toolbar */}
                         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 flex items-center gap-1 bg-black/75 backdrop-blur-sm p-1 rounded-md-full text-white transition-opacity z-20">

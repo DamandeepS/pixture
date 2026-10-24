@@ -4,6 +4,8 @@ import {
   convertUnits,
   packMixedPhotos,
   generateCutMarks,
+  computeSheetSlotsGeometry,
+  calculateMaxSecondaryFit,
   PAPER_PRESETS,
   PHOTO_PRESETS,
 } from './index.js';
@@ -96,5 +98,52 @@ describe('Layout Engine', () => {
     expect(cutMarks.bleedBoxes.length).toBe(1);
     expect(cutMarks.bleedBoxes[0].xMm).toBe(18);
     expect(cutMarks.bleedBoxes[0].widthMm).toBe(104);
+  });
+
+  it('packs 2 different sizes on the same sheet (e.g. 1 5x7 + 4 passports)', () => {
+    const a4 = PAPER_PRESETS.a4;
+    const result = computeSheetSlotsGeometry({
+      sheetWidthMm: a4.widthMm, // 210
+      sheetHeightMm: a4.heightMm, // 297
+      marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
+      gapXMm: 4,
+      gapYMm: 4,
+      layoutMode: 'mixed',
+      photoPresetId: 'print_5x7', // 127 x 177.8
+      primaryPhotoCount: 1,
+      secondaryPhotoPresetId: 'passport_us', // 50.8 x 50.8
+      secondaryPhotoCount: 4,
+    });
+
+    expect(result.totalPages).toBe(1);
+    expect(result.slots.length).toBe(5);
+    expect(result.primaryCountOnCurrentPage).toBe(1);
+    expect(result.secondaryCountOnCurrentPage).toBe(4);
+
+    const primarySlot = result.slots.find((s) => s.sizeType === 'primary');
+    expect(primarySlot).toBeDefined();
+    expect(primarySlot?.widthMm).toBeCloseTo(127, 0);
+
+    const secondarySlots = result.slots.filter((s) => s.sizeType === 'secondary');
+    expect(secondarySlots.length).toBe(4);
+    expect(secondarySlots[0].widthMm).toBeCloseTo(50.8, 0);
+  });
+
+  it('calculates maximum secondary photos fitting alongside primary photo on sheet', () => {
+    const a4 = PAPER_PRESETS.a4;
+    const maxPassports = calculateMaxSecondaryFit({
+      sheetWidthMm: a4.widthMm,
+      sheetHeightMm: a4.heightMm,
+      marginsMm: { top: 10, right: 10, bottom: 10, left: 10 },
+      gapMm: 4,
+      primaryWidthMm: 127,
+      primaryHeightMm: 177.8,
+      primaryCount: 1,
+      secondaryWidthMm: 50.8,
+      secondaryHeightMm: 50.8,
+    });
+
+    // Alongside a 5x7 on A4, at least 4 passports can easily fit on page 0
+    expect(maxPassports).toBeGreaterThanOrEqual(4);
   });
 });

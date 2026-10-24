@@ -9,7 +9,13 @@ import {
   PixtureProject,
   PageSlotAssignment,
 } from '@pixture/print-core';
-import { Unit, computeUniformGridLayout, getPaperDimensions, PHOTO_PRESETS } from '@pixture/layout-engine';
+import {
+  Unit,
+  computeUniformGridLayout,
+  getPaperDimensions,
+  PHOTO_PRESETS,
+  computeSheetSlotsGeometry,
+} from '@pixture/layout-engine';
 import { ProjectState, INITIAL_STATE } from './project-store.js';
 import { SAMPLE_PHOTOS } from '../utils/samplePhotos.js';
 
@@ -480,23 +486,26 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         prev.config.customHeightMm
       );
 
-      const photoPreset = PHOTO_PRESETS[prev.config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-      const photoW = prev.config.customPhotoWidthMm || photoPreset.widthMm;
-      const photoH = prev.config.customPhotoHeightMm || photoPreset.heightMm;
-
-      const grid = computeUniformGridLayout({
+      const res = computeSheetSlotsGeometry({
         sheetWidthMm: paperDim.widthMm,
         sheetHeightMm: paperDim.heightMm,
         marginsMm: prev.config.marginsMm,
-        slotWidthMm: photoW,
-        slotHeightMm: photoH,
         gapXMm: prev.config.gapXMm,
         gapYMm: prev.config.gapYMm,
+        layoutMode: prev.config.layoutMode,
         autoOrientation: prev.config.autoOrientation,
-        allowAutoRotate: photoPreset.allowAutoRotate !== false,
+        photoPresetId: prev.config.photoPresetId,
+        customPhotoWidthMm: prev.config.customPhotoWidthMm,
+        customPhotoHeightMm: prev.config.customPhotoHeightMm,
+        primaryPhotoCount: prev.config.primaryPhotoCount ?? 1,
+        secondaryPhotoPresetId: prev.config.secondaryPhotoPresetId ?? 'passport_us',
+        secondaryPhotoCount: prev.config.secondaryPhotoCount ?? 4,
+        customSecondaryWidthMm: prev.config.customSecondaryWidthMm,
+        customSecondaryHeightMm: prev.config.customSecondaryHeightMm,
+        currentPageIndex: 0,
       });
 
-      const capacity = Math.max(1, grid.capacityPerPage);
+      const capacity = Math.max(1, res.slots.length);
       const totalPagesNeeded = Math.max(1, Math.ceil(prev.photos.length / capacity));
 
       const newPages: SheetPage[] = [];

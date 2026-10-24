@@ -10,6 +10,8 @@ import {
   Info,
   Upload,
   Plus,
+  Minus,
+  Sparkles,
 } from 'lucide-react';
 import { useProject } from '../../state/ProjectContext.js';
 import { useI18n } from '@pixture/i18n';
@@ -17,7 +19,8 @@ import {
   PAPER_PRESETS,
   PHOTO_PRESETS,
   formatMeasurement,
-  computeUniformGridLayout,
+  computeSheetSlotsGeometry,
+  calculateMaxSecondaryFit,
   getPaperDimensions,
   CutMarkStyle,
 } from '@pixture/layout-engine';
@@ -60,28 +63,73 @@ export function ToolPanel() {
       config.customHeightMm
     );
 
-    const photoPreset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
-    const photoW = config.customPhotoWidthMm || photoPreset.widthMm;
-    const photoH = config.customPhotoHeightMm || photoPreset.heightMm;
-
-    const grid = computeUniformGridLayout({
+    const res = computeSheetSlotsGeometry({
       sheetWidthMm: paperDim.widthMm,
       sheetHeightMm: paperDim.heightMm,
       marginsMm: config.marginsMm,
-      slotWidthMm: photoW,
-      slotHeightMm: photoH,
       gapXMm: config.gapXMm,
       gapYMm: config.gapYMm,
+      layoutMode: config.layoutMode,
       autoOrientation: config.autoOrientation,
+      photoPresetId: config.photoPresetId,
+      customPhotoWidthMm: config.customPhotoWidthMm,
+      customPhotoHeightMm: config.customPhotoHeightMm,
+      primaryPhotoCount: config.primaryPhotoCount ?? 1,
+      secondaryPhotoPresetId: config.secondaryPhotoPresetId ?? 'passport_us',
+      secondaryPhotoCount: config.secondaryPhotoCount ?? 4,
+      customSecondaryWidthMm: config.customSecondaryWidthMm,
+      customSecondaryHeightMm: config.customSecondaryHeightMm,
+      currentPageIndex,
     });
 
+    const primPreset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
+    const secPreset = PHOTO_PRESETS[config.secondaryPhotoPresetId ?? 'passport_us'] || PHOTO_PRESETS.passport_us;
+
     return {
-      capacity: grid.capacityPerPage,
-      cols: grid.cols,
-      rows: grid.rows,
-      isRotated: grid.isRotated,
+      capacity: res.slots.length,
+      totalPages: res.totalPages,
+      unplacedCount: res.unplacedCount,
+      primaryCount: res.primaryCountOnCurrentPage,
+      secondaryCount: res.secondaryCountOnCurrentPage,
+      primaryName: primPreset.name,
+      secondaryName: secPreset.name,
+      isUniform: config.layoutMode === 'uniform',
+      paperDim,
     };
-  }, [config]);
+  }, [config, currentPageIndex]);
+
+  const handleFitMaxSecondary = () => {
+    const paperDim = getPaperDimensions(
+      config.paperId,
+      config.orientation,
+      config.customWidthMm,
+      config.customHeightMm
+    );
+
+    const primPreset = PHOTO_PRESETS[config.photoPresetId] || PHOTO_PRESETS.print_4x6;
+    const primW = config.customPhotoWidthMm || primPreset.widthMm;
+    const primH = config.customPhotoHeightMm || primPreset.heightMm;
+
+    const secPreset = PHOTO_PRESETS[config.secondaryPhotoPresetId ?? 'passport_us'] || PHOTO_PRESETS.passport_us;
+    const secW = config.customSecondaryWidthMm || secPreset.widthMm;
+    const secH = config.customSecondaryHeightMm || secPreset.heightMm;
+
+    const maxFit = calculateMaxSecondaryFit({
+      sheetWidthMm: paperDim.widthMm,
+      sheetHeightMm: paperDim.heightMm,
+      marginsMm: config.marginsMm,
+      gapMm: config.gapXMm,
+      primaryWidthMm: primW,
+      primaryHeightMm: primH,
+      primaryCount: config.primaryPhotoCount ?? 1,
+      secondaryWidthMm: secW,
+      secondaryHeightMm: secH,
+    });
+
+    if (maxFit > 0) {
+      updateConfig({ secondaryPhotoCount: maxFit });
+    }
+  };
 
   return (
     <aside
@@ -136,19 +184,24 @@ export function ToolPanel() {
           <>
             {/* Live Capacity Card */}
             <div className="bg-md-primary-container/40 border border-md-primary-container p-3 rounded-md-lg flex items-center justify-between">
-              <div>
+              <div className="min-w-0 pr-2">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-md-primary">
-                  Page Capacity
+                  {config.layoutMode === 'uniform' ? 'Page Capacity' : 'Sheet Layout'}
                 </div>
                 <div className="text-base font-bold text-md-on-surface">
                   {capacityInfo.capacity} Photos / Sheet
                 </div>
-                <div className="text-[11px] text-md-on-surface-variant">
-                  {capacityInfo.cols} cols × {capacityInfo.rows} rows
-                  {capacityInfo.isRotated && ' (auto-rotated 90°)'}
+                <div className="text-[11px] text-md-on-surface-variant font-medium truncate">
+                  {config.layoutMode === 'uniform' ? (
+                    <span>{capacityInfo.primaryName}</span>
+                  ) : (
+                    <span>
+                      {config.primaryPhotoCount ?? 1} × Size 1 + {config.secondaryPhotoCount ?? 4} × Size 2
+                    </span>
+                  )}
                 </div>
               </div>
-              <div className="w-10 h-10 rounded-md-full bg-md-primary flex items-center justify-center text-white font-bold text-sm shadow-md-1">
+              <div className="w-10 h-10 rounded-md-full bg-md-primary flex items-center justify-center text-white font-bold text-sm shadow-md-1 shrink-0">
                 {capacityInfo.capacity}
               </div>
             </div>
@@ -200,46 +253,6 @@ export function ToolPanel() {
               </div>
             </div>
 
-            {/* Target Photo Size Preset */}
-            <div className="space-y-1.5">
-              <label className="font-semibold text-md-on-surface block">
-                {t('photoSize')}
-              </label>
-              <select
-                value={config.photoPresetId}
-                onChange={(e) => updateConfig({ photoPresetId: e.target.value })}
-                className="w-full bg-md-surface-container border border-md-outline-variant rounded-md-md px-2.5 py-2 text-xs text-md-on-surface focus:outline-none focus:border-md-primary"
-              >
-                <optgroup label="Passport & Official ID">
-                  {Object.values(PHOTO_PRESETS)
-                    .filter((p) => p.category === 'id')
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                </optgroup>
-                <optgroup label="Standard Photo Prints">
-                  {Object.values(PHOTO_PRESETS)
-                    .filter((p) => p.category === 'standard')
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                </optgroup>
-                <optgroup label="Square & Retro">
-                  {Object.values(PHOTO_PRESETS)
-                    .filter((p) => p.category === 'square' || p.category === 'retro')
-                    .map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                </optgroup>
-              </select>
-            </div>
-
             {/* Layout Mode */}
             <div className="space-y-1.5">
               <label className="font-semibold text-md-on-surface block">
@@ -264,10 +277,220 @@ export function ToolPanel() {
                       : 'border-md-outline-variant hover:bg-md-surface-container text-md-on-surface-variant'
                   }`}
                 >
-                  {t('mixedPacking')}
+                  {t('twoDifferentSizes')}
                 </button>
               </div>
             </div>
+
+            {/* UNIFORM: Single Target Photo Size Preset */}
+            {config.layoutMode === 'uniform' ? (
+              <div className="space-y-1.5">
+                <label className="font-semibold text-md-on-surface block">
+                  {t('photoSize')}
+                </label>
+                <select
+                  value={config.photoPresetId}
+                  onChange={(e) => updateConfig({ photoPresetId: e.target.value })}
+                  className="w-full bg-md-surface-container border border-md-outline-variant rounded-md-md px-2.5 py-2 text-xs text-md-on-surface focus:outline-none focus:border-md-primary"
+                >
+                  <optgroup label="Standard Photo Prints">
+                    {Object.values(PHOTO_PRESETS)
+                      .filter((p) => p.category === 'standard')
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                  <optgroup label="Passport & Official ID">
+                    {Object.values(PHOTO_PRESETS)
+                      .filter((p) => p.category === 'id')
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                  <optgroup label="Square & Retro">
+                    {Object.values(PHOTO_PRESETS)
+                      .filter((p) => p.category === 'square' || p.category === 'retro')
+                      .map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                </select>
+              </div>
+            ) : (
+              /* DUAL-SIZE MIXED MODE: 2 Different Sizes on Same Sheet */
+              <div className="space-y-3 pt-1">
+                {/* Size 1 (Primary Photo) Card */}
+                <div className="bg-md-surface-container-low border border-md-outline-variant rounded-md-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-md-full bg-md-primary shrink-0" />
+                      <span className="font-semibold text-xs text-md-on-surface">
+                        {t('size1Primary')}
+                      </span>
+                    </div>
+                    {/* Stepper */}
+                    <div className="flex items-center gap-1.5 bg-md-surface border border-md-outline-variant rounded-md-full px-1.5 py-0.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateConfig({
+                            primaryPhotoCount: Math.max(1, (config.primaryPhotoCount ?? 1) - 1),
+                          })
+                        }
+                        disabled={(config.primaryPhotoCount ?? 1) <= 1}
+                        className="p-1 rounded-md-full hover:bg-md-surface-container disabled:opacity-30 transition-colors"
+                        title="Decrease Size 1 count"
+                      >
+                        <Minus className="w-3 h-3 text-md-on-surface-variant" />
+                      </button>
+                      <span className="text-xs font-mono font-bold px-1 min-w-[20px] text-center">
+                        {config.primaryPhotoCount ?? 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateConfig({
+                            primaryPhotoCount: (config.primaryPhotoCount ?? 1) + 1,
+                          })
+                        }
+                        className="p-1 rounded-md-full hover:bg-md-surface-container transition-colors"
+                        title="Increase Size 1 count"
+                      >
+                        <Plus className="w-3 h-3 text-md-on-surface-variant" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <select
+                    value={config.photoPresetId}
+                    onChange={(e) => updateConfig({ photoPresetId: e.target.value })}
+                    className="w-full bg-md-surface border border-md-outline-variant rounded-md-md px-2.5 py-1.5 text-xs text-md-on-surface focus:outline-none focus:border-md-primary"
+                  >
+                    <optgroup label="Standard Photo Prints">
+                      {Object.values(PHOTO_PRESETS)
+                        .filter((p) => p.category === 'standard')
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Passport & Official ID">
+                      {Object.values(PHOTO_PRESETS)
+                        .filter((p) => p.category === 'id')
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Square & Retro">
+                      {Object.values(PHOTO_PRESETS)
+                        .filter((p) => p.category === 'square' || p.category === 'retro')
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* Size 2 (Secondary Photo) Card */}
+                <div className="bg-md-surface-container-low border border-md-outline-variant rounded-md-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-md-full bg-google-green shrink-0" />
+                      <span className="font-semibold text-xs text-md-on-surface">
+                        {t('size2Secondary')}
+                      </span>
+                    </div>
+                    {/* Stepper */}
+                    <div className="flex items-center gap-1.5 bg-md-surface border border-md-outline-variant rounded-md-full px-1.5 py-0.5">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateConfig({
+                            secondaryPhotoCount: Math.max(0, (config.secondaryPhotoCount ?? 4) - 1),
+                          })
+                        }
+                        disabled={(config.secondaryPhotoCount ?? 4) <= 0}
+                        className="p-1 rounded-md-full hover:bg-md-surface-container disabled:opacity-30 transition-colors"
+                        title="Decrease Size 2 count"
+                      >
+                        <Minus className="w-3 h-3 text-md-on-surface-variant" />
+                      </button>
+                      <span className="text-xs font-mono font-bold px-1 min-w-[20px] text-center">
+                        {config.secondaryPhotoCount ?? 4}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateConfig({
+                            secondaryPhotoCount: (config.secondaryPhotoCount ?? 4) + 1,
+                          })
+                        }
+                        className="p-1 rounded-md-full hover:bg-md-surface-container transition-colors"
+                        title="Increase Size 2 count"
+                      >
+                        <Plus className="w-3 h-3 text-md-on-surface-variant" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <select
+                    value={config.secondaryPhotoPresetId ?? 'passport_us'}
+                    onChange={(e) => updateConfig({ secondaryPhotoPresetId: e.target.value })}
+                    className="w-full bg-md-surface border border-md-outline-variant rounded-md-md px-2.5 py-1.5 text-xs text-md-on-surface focus:outline-none focus:border-md-primary"
+                  >
+                    <optgroup label="Passport & Official ID">
+                      {Object.values(PHOTO_PRESETS)
+                        .filter((p) => p.category === 'id')
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Standard Photo Prints">
+                      {Object.values(PHOTO_PRESETS)
+                        .filter((p) => p.category === 'standard')
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Square & Retro">
+                      {Object.values(PHOTO_PRESETS)
+                        .filter((p) => p.category === 'square' || p.category === 'retro')
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+
+                  {/* Auto-Fill Button */}
+                  <button
+                    type="button"
+                    onClick={handleFitMaxSecondary}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md-full bg-md-surface hover:bg-md-surface-container border border-md-outline-variant text-[11px] font-semibold text-md-on-surface transition-colors shadow-sm"
+                    title="Calculate maximum secondary photos that can fit on this sheet"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-google-yellow" />
+                    <span>{t('autoFillRemaining')}</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Margins */}
             <div className="space-y-2">
@@ -460,8 +683,23 @@ export function ToolPanel() {
             ) : !selectedPhoto || !adj ? (
               <div className="space-y-4">
                 <div className="p-3 bg-md-surface-container rounded-md-lg">
-                  <div className="font-semibold text-xs text-md-on-surface">
-                    Slot #{selectedSlotIndex + 1} (Empty)
+                  <div className="flex items-center justify-between">
+                    <div className="font-semibold text-xs text-md-on-surface">
+                      Slot #{selectedSlotIndex + 1} (Empty)
+                    </div>
+                    {config.layoutMode === 'mixed' && (
+                      <span
+                        className={`text-[9px] font-bold px-2 py-0.5 rounded-md-full text-white ${
+                          selectedSlotIndex < (config.primaryPhotoCount ?? 1)
+                            ? 'bg-md-primary'
+                            : 'bg-google-green'
+                        }`}
+                      >
+                        {selectedSlotIndex < (config.primaryPhotoCount ?? 1)
+                          ? `Size 1 (${capacityInfo.primaryName})`
+                          : `Size 2 (${capacityInfo.secondaryName})`}
+                      </span>
+                    )}
                   </div>
                   <p className="text-[11px] text-md-on-surface-variant mt-1 leading-relaxed break-words">
                     Add a photo to this slot by uploading or choosing from your photos.
@@ -512,8 +750,21 @@ export function ToolPanel() {
                     <div className="font-semibold text-xs truncate text-md-on-surface">
                       {selectedPhoto.name}
                     </div>
-                    <div className="text-[10px] text-md-on-surface-variant font-mono">
-                      {selectedPhoto.width} × {selectedPhoto.height} px
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[10px] text-md-on-surface-variant font-mono">
+                        {selectedPhoto.width} × {selectedPhoto.height} px
+                      </span>
+                      {config.layoutMode === 'mixed' && (
+                        <span
+                          className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md-full text-white ${
+                            selectedSlotIndex < (config.primaryPhotoCount ?? 1)
+                              ? 'bg-md-primary'
+                              : 'bg-google-green'
+                          }`}
+                        >
+                          {selectedSlotIndex < (config.primaryPhotoCount ?? 1) ? 'Size 1' : 'Size 2'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
